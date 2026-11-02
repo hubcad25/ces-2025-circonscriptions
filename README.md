@@ -1,51 +1,52 @@
-# CES 2025 par circonscription
+# CES 2025 by riding
 
-Estimations par circonscription fédérale (découpage 2023) des intentions de vote et des attitudes politiques, à partir de l'Étude électorale canadienne 2025, par MRP.
+Riding-level estimates (2023 boundaries) of vote intention and political attitudes from the 2025 Canadian Election Study, using multilevel regression and poststratification (MRP).
 
-<!--- Les estimations de vote sont comparées aux résultats officiels de l'élection du 28 avril 2025. --->
+<!--- Vote estimates are compared to the official results of the April 28, 2025 election. --->
 
-Pipeline : Python et SQL (DuckDB). Dashboard statique : React.
+Pipeline: Python and SQL (DuckDB). Static dashboard: React.
 
-## Lancer
+## Run
 
-Prérequis : [uv](https://docs.astral.sh/uv/) (installe Python 3.12).
+Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12).
 
 ```bash
-make install   # dépendances
-make extract   # télécharge les données brutes dans data/raw/, vérifie le SHA-256
-make build     # exécute sql/raw, sql/staging puis sql/analytics dans data/ces.duckdb
-make tables    # liste les tables et leur nombre de lignes
-make show TABLE=analytics.results_fed   # aperçu d'une table
-make ui        # interface web DuckDB, en lecture seule
+make install   # dependencies
+make extract   # downloads raw data into data/raw/, checks SHA-256
+make build     # runs sql/raw, sql/staging, then sql/analytics into data/ces.duckdb
+make tables    # lists tables and row counts
+make show TABLE=analytics.results_fed   # previews a table
+make ui        # DuckDB web UI, read-only
 make lint      # ruff check + format --check
-make test      # contrôles de qualité sur data/ces.duckdb
+make test      # data quality checks on data/ces.duckdb
 ```
 
-`make test` lit la base construite : lancer `make build` avant. `make ui` ouvre la base en lecture seule ; la fermer avant `make build`, DuckDB n'accepte qu'un seul écrivain à la fois.
+`make test` reads the built database: run `make build` first. `make ui` opens the database read-only; close it before `make build`, since DuckDB allows a single writer.
 
 ## Sources
 
-| Source | Détail | Lien |
+| Source | Data | Link |
 |---|---|---|
-| Élections Canada | 45e élection générale (28 avril 2025), tableau 12 « Résultats détaillés par circonscription » | https://elections.ca/res/rep/off/ovrGE45/62/data_donnees/table_tableau12.csv |
-| Ressources naturelles Canada | Limites des circonscriptions fédérales, découpages 2013 et 2023 | https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/ |
-| Statistique Canada | Points représentatifs des îlots de diffusion 2021 | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
-| Statistique Canada | Recensement 2021 : population par aire de diffusion et par circonscription (2013 et 2023) | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
+| Elections Canada | 45th general election (April 28, 2025), table 12 "Detailed results by electoral district" | https://elections.ca/res/rep/off/ovrGE45/62/data_donnees/table_tableau12.csv |
+| Natural Resources Canada | Federal electoral district boundaries, 2013 and 2023 representation orders | https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/ |
+| Statistics Canada | Representative points of 2021 dissemination blocks | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
+| Statistics Canada | 2021 Census: population by dissemination area and by riding (2013 and 2023) | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
 
-Les données brutes ne sont pas versionnées (`data/` est ignoré par Git) ; elles sont retéléchargées par les scripts.
+Raw data is not versioned (`data/` is ignored by Git); the scripts download it again.
 
 ## Structure
 
-- `pipeline/` : scripts Python (extraction des sources, exécution des couches SQL)
-- `sql/raw` : sources telles que reçues
-- `sql/staging` : données nettoyées, une table par source
-- `sql/analytics` : tables d'analyse
+- `pipeline/`: Python scripts (source extraction, running the SQL layers)
+- `sql/raw`: sources as received
+- `sql/staging`: cleaned data, one table per source
+- `sql/analytics`: analysis tables
+- `tests/`: data quality checks
 
-Tables actuelles :
-- `raw.results` : export brut d'Élections Canada
-- `staging.candidates` : une ligne par candidat ; le parti est extrait du suffixe bilingue collé au nom, les six principaux partis sont distingués, les autres sont regroupés sous `OTH`
-- `staging.ridings_2013`, `staging.ridings_2023` : limites des circonscriptions, en EPSG:3347
-- `staging.blocks`, `staging.da_population` : îlots de diffusion (point représentatif) et population des aires de diffusion
-- `staging.riding_population` : population officielle par circonscription, découpages 2013 et 2023
-- `analytics.fed_crosswalk` : part de la population de chaque circonscription 2013 dans chaque circonscription 2023, par jointure spatiale des îlots ; la population d'une aire de diffusion est répartie également entre ses îlots (écart médian de 0,16 % avec la population officielle par circonscription, maximum 4,2 %)
-- `analytics.results_fed` : une ligne par circonscription × parti (votes, part, rang, gagnant, avance sur le suivant) ; 343 circonscriptions, correspond aux résultats officiels (169 PLC, 144 PCC, 22 BQ, 7 NPD, 1 PVC)
+Current tables:
+- `raw.results`: raw Elections Canada export
+- `staging.candidates`: one row per candidate; the party is parsed from the bilingual suffix attached to the name, the six main parties are kept apart, others are grouped as `OTH`
+- `staging.ridings_2013`, `staging.ridings_2023`: riding boundaries, in EPSG:3347
+- `staging.blocks`, `staging.da_population`: dissemination blocks (representative point) and dissemination area populations
+- `staging.riding_population`: official population by riding, 2013 and 2023 boundaries
+- `analytics.fed_crosswalk`: share of each 2013 riding's population in each 2023 riding, from a spatial join of blocks; a dissemination area's population is split evenly across its blocks (median gap with official riding populations 0.16%, max 4.2%)
+- `analytics.results_fed`: one row per riding × party (votes, share, rank, winner, lead over the next party); 343 ridings, matches the official seat count (169 LPC, 144 CPC, 22 BQ, 7 NDP, 1 GPC)
