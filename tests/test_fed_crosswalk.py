@@ -1,18 +1,9 @@
-import duckdb
 import pytest
-
-from pipeline.load import DATABASE
 
 # The crosswalk splits each dissemination area's population evenly across its blocks, so
 # riding totals are approximate. Measured on 2026-11-02: median gap 0.16%, max 4.2%.
 MAX_MEDIAN_GAP = 0.005
 MAX_GAP = 0.05
-
-
-@pytest.fixture(scope="module")
-def con():
-    with duckdb.connect(DATABASE, read_only=True) as con:
-        yield con
 
 
 @pytest.mark.parametrize("order", [2013, 2023])

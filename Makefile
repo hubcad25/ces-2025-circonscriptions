@@ -6,6 +6,7 @@ extract:
 	uv run python -m pipeline.extract.boundaries
 	uv run python -m pipeline.extract.dissemination_areas
 	uv run python -m pipeline.extract.census
+	uv run python -m pipeline.extract.ces
 
 build:
 	uv run python -m pipeline.load
