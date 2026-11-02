@@ -22,8 +22,9 @@ SELECT
         WHEN cps25_age_in_years < 75 THEN '65-74'
         ELSE '75+'
     END AS age_group,
-    -- The census publishes two gender categories; non-binary respondents (0.8%) are left out.
-    CASE cps25_genderid WHEN 1 THEN 'man' WHEN 2 THEN 'woman' END AS gender,
+    -- The census only publishes "Men+" and "Women+"; non-binary respondents (0.8%) are grouped
+    -- with men so that no one is dropped.
+    CASE WHEN cps25_genderid = 2 THEN 'woman' ELSE 'man_plus' END AS gender,
     -- Highest certificate completed, as in the census: "some college" or "some university"
     -- without a diploma counts as secondary.
     CASE
