@@ -1,0 +1,21 @@
+[project]
+name = "ces-2025-circonscriptions"
+version = "0.1.0"
+description = "Estimations MRP par circonscription à partir de l'Étude électorale canadienne 2025"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "duckdb>=2.0.0",
+    "pandas>=3.1.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
+]
