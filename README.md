@@ -27,6 +27,7 @@ make test      # data quality checks on data/ces.duckdb
 
 | Source | Data | Link |
 |---|---|---|
+| Canadian Election Study | 2025 CES, version 1 (CC BY-NC 4.0) | https://doi.org/10.7910/DVN/2YAQ8D |
 | Elections Canada | 45th general election (April 28, 2025), table 12 "Detailed results by electoral district" | https://elections.ca/res/rep/off/ovrGE45/62/data_donnees/table_tableau12.csv |
 | Natural Resources Canada | Federal electoral district boundaries, 2013 and 2023 representation orders | https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/ |
 | Statistics Canada | Representative points of 2021 dissemination blocks | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
@@ -44,6 +45,10 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 
 Current tables:
 - `raw.results`: raw Elections Canada export
+- `raw.ces`, `raw.ces_variables`, `raw.ces_value_labels`: the CES Stata file, converted to Parquet because DuckDB cannot read Stata
+- `staging.respondents`: one row per CES respondent with 2013 riding, province and census-aligned age, gender and education; non-binary respondents (0.8%) are grouped with men, since the census only publishes "Men+" and "Women+"
+- `staging.responses`: long format, one row per respondent × coded question (4.7M rows, 469 questions)
+- `staging.variables`, `staging.value_labels`: question wording, survey wave and answer labels
 - `staging.candidates`: one row per candidate; the party is parsed from the bilingual suffix attached to the name, the six main parties are kept apart, others are grouped as `OTH`
 - `staging.ridings_2013`, `staging.ridings_2023`: riding boundaries, in EPSG:3347
 - `staging.blocks`, `staging.da_population`: dissemination blocks (representative point) and dissemination area populations
