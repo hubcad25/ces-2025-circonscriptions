@@ -3,6 +3,7 @@ install:
 
 extract:
 	uv run python -m pipeline.extract.results
+	uv run python -m pipeline.extract.boundaries
 
 build:
 	uv run python -m pipeline.load
