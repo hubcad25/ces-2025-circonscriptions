@@ -13,7 +13,7 @@ Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12).
 ```bash
 make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
-make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~30 s)
+make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
 make mrp       # fits the MRP model for both survey waves (~10 min)
 make export    # writes the website data to web/public/data/ as Parquet
 make tables    # lists tables and row counts
