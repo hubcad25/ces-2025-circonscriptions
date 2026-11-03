@@ -12,14 +12,17 @@ Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12).
 
 ```bash
 make install   # dependencies
-make extract   # downloads raw data into data/raw/, checks SHA-256
-make build     # runs sql/raw, sql/staging, then sql/analytics into data/ces.duckdb
+make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
+make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~30 s)
+make mrp       # fits the MRP model for both survey waves (~10 min)
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
 make ui        # DuckDB web UI, read-only
 make lint      # ruff check + format --check
 make test      # data quality checks on data/ces.duckdb
 ```
+
+Times were measured on a 16-core laptop; `make mrp` runs four MCMC chains in parallel and is slower with fewer cores.
 
 `make test` reads the built database: run `make build` first. `make ui` opens the database read-only; close it before `make build`, since DuckDB allows a single writer.
 
@@ -29,6 +32,7 @@ make test      # data quality checks on data/ces.duckdb
 |---|---|---|
 | Canadian Election Study | 2025 CES, version 1 (CC BY-NC 4.0) | https://doi.org/10.7910/DVN/2YAQ8D |
 | Elections Canada | 45th general election (April 28, 2025), table 12 "Detailed results by electoral district" | https://elections.ca/res/rep/off/ovrGE45/62/data_donnees/table_tableau12.csv |
+| Elections Canada | 44th general election (September 20, 2021), tables 11 and 12 (turnout and results by electoral district, 2013 boundaries) | https://elections.ca/res/rep/off/ovr2021app/53/data_donnees/ |
 | Natural Resources Canada | Federal electoral district boundaries, 2013 and 2023 representation orders | https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/ |
 | Statistics Canada | Representative points of 2021 dissemination blocks | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
 | Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
