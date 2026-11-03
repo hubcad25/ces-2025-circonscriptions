@@ -123,16 +123,16 @@ export default function RidingMap({ ridings, color }: Props) {
 
   const [low, high] = shareRange(ridings);
   return (
-    <>
+    <div className="map-wrap">
       <div className="map" ref={container} />
       <div className="legend">
-        <span>{(100 * low).toFixed(0)}%</span>
+        <span>{(100 * high).toFixed(0)}%</span>
         <span
           className="legend-bar"
-          style={{ background: `linear-gradient(to right, ${LOW_COLOR}, ${color})` }}
+          style={{ background: `linear-gradient(to top, ${LOW_COLOR}, ${color})` }}
         />
-        <span>{(100 * high).toFixed(0)}%</span>
+        <span>{(100 * low).toFixed(0)}%</span>
       </div>
-    </>
+    </div>
   );
 }
