@@ -10,7 +10,7 @@ import numpyro.distributions as dist
 import pandas as pd
 from numpyro.infer import MCMC, NUTS
 
-from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES
+from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES, PAST_VOTES
 from pipeline.load import DATABASE, run_scripts
 
 N_CHAINS = 4
@@ -20,16 +20,20 @@ N_DRAWS = 100
 SEED = 2025
 
 SURVEY_QUERY = """
-SELECT o.category, r.fed13, r.age_group, r.gender, r.education, r.language
+SELECT o.category, r.fed13, r.age_group, r.gender, r.education, r.language, r.past_vote
 FROM analytics.mrp_outcomes AS o
 JOIN staging.respondents AS r USING (respondent_id)
-WHERE o.question = ? AND r.fed13 IS NOT NULL AND r.education IS NOT NULL
+WHERE o.question = ?
+    AND r.fed13 IS NOT NULL
+    AND r.education IS NOT NULL
+    AND r.past_vote IS NOT NULL
 """
 
+# Past vote is sorted last so that each group of consecutive rows is one demographic cell.
 CELLS_QUERY = """
-SELECT DISTINCT fed13, age_group, gender, education, language
+SELECT fed13, age_group, gender, education, language, past_vote, n
 FROM analytics.census_cells
-ORDER BY ALL
+ORDER BY fed13, age_group, gender, education, language, past_vote
 """
 
 
@@ -53,6 +57,7 @@ def group_levels(ridings: list[int]) -> dict[str, list]:
         "gender": GENDERS,
         "education": EDUCATION,
         "language": LANGUAGES,
+        "past_vote": PAST_VOTES,
         "fed13": ridings,
     }
 
@@ -137,8 +142,17 @@ def fit(
     return mcmc
 
 
+def past_vote_weights(cells: pd.DataFrame) -> np.ndarray:
+    counts = cells["n"].to_numpy().reshape(-1, len(PAST_VOTES))
+    totals = counts.sum(axis=1, keepdims=True)
+    return np.divide(counts, totals, out=np.zeros_like(counts), where=totals > 0)
+
+
 def predict_probabilities(
-    samples: dict[str, jnp.ndarray], group_sizes: dict[str, int], codes: dict[str, np.ndarray]
+    samples: dict[str, jnp.ndarray],
+    group_sizes: dict[str, int],
+    codes: dict[str, np.ndarray],
+    weights: np.ndarray,
 ) -> np.ndarray:
     # Evenly spaced draws across all chains keep the posterior spread in a smaller output.
     kept = np.linspace(0, len(samples["intercept"]) - 1, N_DRAWS).astype(int)
@@ -149,8 +163,11 @@ def predict_probabilities(
             for group in group_sizes
         }
         logits = category_logits(samples["intercept"][draw], effects, codes)
-        probabilities.append(jax.nn.softmax(logits, axis=1))
-    # Axes: draw, row of codes, category.
+        by_past_vote = jax.nn.softmax(logits, axis=1).reshape(*weights.shape, -1)
+        # Past vote only corrects the sample; it is averaged out with the census weights so
+        # that the draws keep one row per demographic cell.
+        probabilities.append((by_past_vote * weights[:, :, None]).sum(axis=1))
+    # Axes: draw, demographic cell, category.
     return np.stack(probabilities)
 
 
@@ -204,8 +221,11 @@ def fit_question(database: Path, question: str) -> None:
     sizes = effect_sizes(ridings)
     outcome = pd.Categorical(survey["category"], categories=categories).codes
     mcmc = fit(encode(survey, ridings), sizes, len(categories), outcome)
-    probabilities = predict_probabilities(mcmc.get_samples(), sizes, encode(cells, ridings))
-    save_draws(database, draws_frame(question, cells, categories, probabilities))
+    probabilities = predict_probabilities(
+        mcmc.get_samples(), sizes, encode(cells, ridings), past_vote_weights(cells)
+    )
+    demographic_cells = cells.iloc[:: len(PAST_VOTES)]
+    save_draws(database, draws_frame(question, demographic_cells, categories, probabilities))
 
 
 if __name__ == "__main__":
