@@ -15,8 +15,10 @@ from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES, PAST_VOTES
 from pipeline.load import DATABASE, run_scripts
 
 N_CHAINS = 4
-N_WARMUP = 500
-N_SAMPLES = 500
+# Warmup and kept iterations per chain. A quick run only checks that the code runs end to end
+# (about 20 s instead of 5 min); its draws are not saved.
+N_ITERATIONS = 500
+QUICK_ITERATIONS = 20
 N_DRAWS = 100
 SEED = 2025
 
@@ -213,11 +215,12 @@ def fit(
     n_categories: int,
     is_ordinal: bool,
     outcome: np.ndarray,
+    n_iterations: int,
 ) -> MCMC:
     mcmc = MCMC(
         NUTS(model),
-        num_warmup=N_WARMUP,
-        num_samples=N_SAMPLES,
+        num_warmup=n_iterations,
+        num_samples=n_iterations,
         num_chains=N_CHAINS,
         chain_method="parallel",
         progress_bar=True,
@@ -316,7 +319,7 @@ def save_draws(database: Path, draws: pd.DataFrame) -> None:
         con.execute("INSERT INTO analytics.mrp_draws SELECT * FROM draws")
 
 
-def fit_question(database: Path, question: str) -> None:
+def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
     survey, ridings = load_survey(database, question)
     cells = load_cells(database)
     scale = load_scale(database, question)
@@ -331,7 +334,10 @@ def fit_question(database: Path, question: str) -> None:
     survey_codes = encode(survey, ridings)
     if not allowed[survey_codes["province"], outcome].all():
         raise ValueError("Some respondents chose a category excluded from their province")
-    mcmc = fit(survey_codes, sizes, predictors, allowed, len(categories), is_ordinal, outcome)
+    n_iterations = QUICK_ITERATIONS if is_quick else N_ITERATIONS
+    mcmc = fit(
+        survey_codes, sizes, predictors, allowed, len(categories), is_ordinal, outcome, n_iterations
+    )
     probabilities = predict_probabilities(
         mcmc.get_samples(),
         sizes,
@@ -341,12 +347,17 @@ def fit_question(database: Path, question: str) -> None:
         past_vote_weights(cells),
         is_ordinal,
     )
+    if is_quick:
+        return
     demographic_cells = cells.iloc[:: len(PAST_VOTES)]
     save_draws(database, draws_frame(question, demographic_cells, categories, probabilities))
 
 
+# Usage: python -m pipeline.mrp <question> [--quick]
 if __name__ == "__main__":
     question = sys.argv[1] if len(sys.argv) > 1 else "vote_post"
-    fit_question(DATABASE, question)
-    with duckdb.connect(DATABASE) as con:
-        run_scripts(con, Path("sql/estimates"))
+    is_quick = "--quick" in sys.argv
+    fit_question(DATABASE, question, is_quick)
+    if not is_quick:
+        with duckdb.connect(DATABASE) as con:
+            run_scripts(con, Path("sql/estimates"))
