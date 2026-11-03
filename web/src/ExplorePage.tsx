@@ -67,7 +67,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
             aria-pressed={option.code === category.code}
             onClick={() => setCategory(option)}
           >
-            {option.code}
+            {option.label}
           </button>
         ))}
         <FilterControls filter={filter} onChange={setFilter} />

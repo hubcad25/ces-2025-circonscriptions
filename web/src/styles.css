@@ -222,6 +222,16 @@ td {
   fill: var(--party);
 }
 
+.interval .national {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+
+.national-value {
+  color: var(--muted);
+}
+
 .interval .actual {
   stroke: var(--text);
   stroke-width: 2;

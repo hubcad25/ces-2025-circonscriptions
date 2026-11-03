@@ -8,14 +8,17 @@ import numpy as np
 import numpyro
 import numpyro.distributions as dist
 import pandas as pd
+from numpyro.distributions.transforms import OrderedTransform
 from numpyro.infer import MCMC, NUTS
 
 from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES, PAST_VOTES
 from pipeline.load import DATABASE, run_scripts
 
 N_CHAINS = 4
-N_WARMUP = 500
-N_SAMPLES = 500
+# Warmup and kept iterations per chain. A quick run only checks that the code runs end to end
+# (about 20 s instead of 5 min); its draws are not saved.
+N_ITERATIONS = 500
+QUICK_ITERATIONS = 20
 N_DRAWS = 100
 SEED = 2025
 
@@ -102,9 +105,21 @@ def riding_provinces(ridings: list[int]) -> np.ndarray:
     return np.array([codes.index(fed13 // 1000) for fed13 in ridings])
 
 
-def category_order(categories: pd.Series) -> list[str]:
-    # The most frequent category is the reference of the multinomial model; a rare one such as
-    # the Bloc (zero outside Quebec) would make every other coefficient unstable.
+def load_scale(database: Path, question: str) -> list[str] | None:
+    with duckdb.connect(database, read_only=True) as con:
+        rows = con.execute(
+            "SELECT category FROM analytics.mrp_scales WHERE question = ? ORDER BY rank",
+            [question],
+        ).fetchall()
+    return [row[0] for row in rows] or None
+
+
+def category_order(categories: pd.Series, scale: list[str] | None) -> list[str]:
+    # An ordinal question keeps its scale order. For a multinomial one, the most frequent
+    # category is the reference; a rare one such as the Bloc (zero outside Quebec) would make
+    # every other coefficient unstable.
+    if scale is not None:
+        return scale
     return categories.value_counts().index.tolist()
 
 
@@ -126,17 +141,31 @@ def allowed_categories(
     return allowed
 
 
+def linear_predictor(effects: dict[str, jnp.ndarray], codes: dict[str, np.ndarray]) -> jnp.ndarray:
+    # Axes: row of codes, effect column.
+    return sum(effect[codes[group]] for group, effect in effects.items())
+
+
 def category_logits(
     intercept: jnp.ndarray,
-    effects: dict[str, jnp.ndarray],
+    linear: jnp.ndarray,
     codes: dict[str, np.ndarray],
     allowed: np.ndarray,
 ) -> jnp.ndarray:
-    logits = intercept + sum(effect[codes[group]] for group, effect in effects.items())
+    logits = intercept + linear
     reference = jnp.zeros((logits.shape[0], 1))
     logits = jnp.concatenate([reference, logits], axis=1)
     # An excluded category gets a probability of exactly zero after the softmax.
     return jnp.where(allowed[codes["province"]], logits, -jnp.inf)
+
+
+def ordinal_probabilities(linear: jnp.ndarray, cutpoints: jnp.ndarray) -> jnp.ndarray:
+    # P(answer <= k) = sigmoid(cutpoint_k - linear); each category is the gap between two
+    # consecutive cumulative probabilities.
+    below = jax.nn.sigmoid(cutpoints[None, :] - linear[:, :1])
+    n = linear.shape[0]
+    cumulative = jnp.concatenate([jnp.zeros((n, 1)), below, jnp.ones((n, 1))], axis=1)
+    return jnp.diff(cumulative, axis=1)
 
 
 def model(
@@ -145,13 +174,14 @@ def model(
     predictors: np.ndarray,
     allowed: np.ndarray,
     n_categories: int,
+    is_ordinal: bool,
     outcome: np.ndarray | None = None,
 ) -> None:
     # Multinomial logit: category 0 is the reference, so each effect has one column per other
-    # category. Random effects are non-centered (z * sigma), which helps NUTS when a group has
-    # few respondents, as in most ridings.
-    n_effects = n_categories - 1
-    intercept = numpyro.sample("intercept", dist.Normal(0, 2).expand([n_effects]))
+    # category. Ordered logit: one column, and ordered cutpoints split it into categories.
+    # Random effects are non-centered (z * sigma), which helps NUTS when a group has few
+    # respondents, as in most ridings.
+    n_effects = 1 if is_ordinal else n_categories - 1
     effects = {}
     for group, size in group_sizes.items():
         sigma = numpyro.sample(f"sigma_{group}", dist.HalfNormal(1).expand([n_effects]))
@@ -161,9 +191,20 @@ def model(
     # pulled toward similar ridings rather than toward the national mean.
     beta = numpyro.sample("beta_fed13", dist.Normal(0, 1).expand([predictors.shape[1], n_effects]))
     effects["fed13"] = effects["fed13"] + predictors @ beta
-    logits = category_logits(intercept, effects, codes, allowed)
-    with numpyro.plate("respondents", logits.shape[0]):
-        numpyro.sample("outcome", dist.Categorical(logits=logits), obs=outcome)
+    linear = linear_predictor(effects, codes)
+    if is_ordinal:
+        cutpoints = numpyro.sample(
+            "cutpoints",
+            dist.TransformedDistribution(
+                dist.Normal(0, 3).expand([n_categories - 1]), OrderedTransform()
+            ),
+        )
+        likelihood = dist.OrderedLogistic(linear[:, 0], cutpoints)
+    else:
+        intercept = numpyro.sample("intercept", dist.Normal(0, 2).expand([n_effects]))
+        likelihood = dist.Categorical(logits=category_logits(intercept, linear, codes, allowed))
+    with numpyro.plate("respondents", linear.shape[0]):
+        numpyro.sample("outcome", likelihood, obs=outcome)
 
 
 def fit(
@@ -172,18 +213,27 @@ def fit(
     predictors: np.ndarray,
     allowed: np.ndarray,
     n_categories: int,
+    is_ordinal: bool,
     outcome: np.ndarray,
+    n_iterations: int,
 ) -> MCMC:
     mcmc = MCMC(
         NUTS(model),
-        num_warmup=N_WARMUP,
-        num_samples=N_SAMPLES,
+        num_warmup=n_iterations,
+        num_samples=n_iterations,
         num_chains=N_CHAINS,
         chain_method="parallel",
         progress_bar=True,
     )
     mcmc.run(
-        jax.random.PRNGKey(SEED), codes, group_sizes, predictors, allowed, n_categories, outcome
+        jax.random.PRNGKey(SEED),
+        codes,
+        group_sizes,
+        predictors,
+        allowed,
+        n_categories,
+        is_ordinal,
+        outcome,
     )
     return mcmc
 
@@ -201,9 +251,10 @@ def predict_probabilities(
     allowed: np.ndarray,
     codes: dict[str, np.ndarray],
     weights: np.ndarray,
+    is_ordinal: bool,
 ) -> np.ndarray:
     # Evenly spaced draws across all chains keep the posterior spread in a smaller output.
-    kept = np.linspace(0, len(samples["intercept"]) - 1, N_DRAWS).astype(int)
+    kept = np.linspace(0, len(samples["beta_fed13"]) - 1, N_DRAWS).astype(int)
     probabilities = []
     for draw in kept:
         effects = {
@@ -211,8 +262,13 @@ def predict_probabilities(
             for group in group_sizes
         }
         effects["fed13"] = effects["fed13"] + predictors @ samples["beta_fed13"][draw]
-        logits = category_logits(samples["intercept"][draw], effects, codes, allowed)
-        by_past_vote = jax.nn.softmax(logits, axis=1).reshape(*weights.shape, -1)
+        linear = linear_predictor(effects, codes)
+        if is_ordinal:
+            by_cell = ordinal_probabilities(linear, samples["cutpoints"][draw])
+        else:
+            logits = category_logits(samples["intercept"][draw], linear, codes, allowed)
+            by_cell = jax.nn.softmax(logits, axis=1)
+        by_past_vote = by_cell.reshape(*weights.shape, -1)
         # Past vote only corrects the sample; it is averaged out with the census weights so
         # that the draws keep one row per demographic cell.
         probabilities.append((by_past_vote * weights[:, :, None]).sum(axis=1))
@@ -263,18 +319,25 @@ def save_draws(database: Path, draws: pd.DataFrame) -> None:
         con.execute("INSERT INTO analytics.mrp_draws SELECT * FROM draws")
 
 
-def fit_question(database: Path, question: str) -> None:
+def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
     survey, ridings = load_survey(database, question)
     cells = load_cells(database)
-    categories = category_order(survey["category"])
+    scale = load_scale(database, question)
+    is_ordinal = scale is not None
+    categories = category_order(survey["category"], scale)
     sizes = effect_sizes(ridings)
     predictors = load_predictors(database, ridings)
     allowed = allowed_categories(database, question, ridings, categories)
+    if is_ordinal and not allowed.all():
+        raise ValueError("Exclusions are only supported for multinomial questions")
     outcome = pd.Categorical(survey["category"], categories=categories).codes
     survey_codes = encode(survey, ridings)
     if not allowed[survey_codes["province"], outcome].all():
         raise ValueError("Some respondents chose a category excluded from their province")
-    mcmc = fit(survey_codes, sizes, predictors, allowed, len(categories), outcome)
+    n_iterations = QUICK_ITERATIONS if is_quick else N_ITERATIONS
+    mcmc = fit(
+        survey_codes, sizes, predictors, allowed, len(categories), is_ordinal, outcome, n_iterations
+    )
     probabilities = predict_probabilities(
         mcmc.get_samples(),
         sizes,
@@ -282,13 +345,19 @@ def fit_question(database: Path, question: str) -> None:
         allowed,
         encode(cells, ridings),
         past_vote_weights(cells),
+        is_ordinal,
     )
+    if is_quick:
+        return
     demographic_cells = cells.iloc[:: len(PAST_VOTES)]
     save_draws(database, draws_frame(question, demographic_cells, categories, probabilities))
 
 
+# Usage: python -m pipeline.mrp <question> [--quick]
 if __name__ == "__main__":
     question = sys.argv[1] if len(sys.argv) > 1 else "vote_post"
-    fit_question(DATABASE, question)
-    with duckdb.connect(DATABASE) as con:
-        run_scripts(con, Path("sql/estimates"))
+    is_quick = "--quick" in sys.argv
+    fit_question(DATABASE, question, is_quick)
+    if not is_quick:
+        with duckdb.connect(DATABASE) as con:
+            run_scripts(con, Path("sql/estimates"))

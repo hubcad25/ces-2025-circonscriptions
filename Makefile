@@ -16,6 +16,9 @@ build:
 mrp:
 	uv run python -m pipeline.mrp vote_post
 	uv run python -m pipeline.mrp vote_pre
+	uv run python -m pipeline.mrp immigration
+	uv run python -m pipeline.mrp spend_defence
+	uv run python -m pipeline.mrp bilingualism
 
 export:
 	uv run python -m pipeline.export
