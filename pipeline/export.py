@@ -5,7 +5,7 @@ import duckdb
 from pipeline.load import DATABASE
 
 DESTINATION = Path("web/public/data")
-TABLES = ["fed_summaries", "vote_gaps"]
+TABLES = ["fed_summaries", "national_summaries", "vote_gaps"]
 
 # Boundaries are simplified to 500 m, below the size of the smallest riding (6.7 km²),
 # which keeps the file near 650 kB once compressed. Ridings are simplified together as a
