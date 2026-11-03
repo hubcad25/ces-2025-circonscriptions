@@ -53,6 +53,15 @@ def load_cells(database: Path) -> pd.DataFrame:
         return con.sql(CELLS_QUERY).df()
 
 
+def load_predictors(database: Path, ridings: list[int]) -> np.ndarray:
+    with duckdb.connect(database, read_only=True) as con:
+        predictors = con.sql("FROM analytics.fed_predictors").df().set_index("fed13")
+    if not set(ridings) <= set(predictors.index):
+        raise ValueError("Some ridings have no predictors in analytics.fed_predictors")
+    # Rows follow the riding codes used by encode().
+    return predictors.loc[ridings].to_numpy()
+
+
 def group_levels(ridings: list[int]) -> dict[str, list]:
     # Levels come from the census so that the same codes index the poststratification cells,
     # including ridings with no respondent.
@@ -110,6 +119,7 @@ def category_logits(
 def model(
     codes: dict[str, np.ndarray],
     group_sizes: dict[str, int],
+    predictors: np.ndarray,
     n_categories: int,
     outcome: np.ndarray | None = None,
 ) -> None:
@@ -123,6 +133,10 @@ def model(
         sigma = numpyro.sample(f"sigma_{group}", dist.HalfNormal(1).expand([n_effects]))
         z = numpyro.sample(f"z_{group}", dist.Normal(0, 1).expand([size, n_effects]))
         effects[group] = z * sigma
+    # Riding predictors shift each riding's effect, so that ridings with few respondents are
+    # pulled toward similar ridings rather than toward the national mean.
+    beta = numpyro.sample("beta_fed13", dist.Normal(0, 1).expand([predictors.shape[1], n_effects]))
+    effects["fed13"] = effects["fed13"] + predictors @ beta
     logits = category_logits(intercept, effects, codes)
     with numpyro.plate("respondents", logits.shape[0]):
         numpyro.sample("outcome", dist.Categorical(logits=logits), obs=outcome)
@@ -131,6 +145,7 @@ def model(
 def fit(
     codes: dict[str, np.ndarray],
     group_sizes: dict[str, int],
+    predictors: np.ndarray,
     n_categories: int,
     outcome: np.ndarray,
 ) -> MCMC:
@@ -142,7 +157,7 @@ def fit(
         chain_method="parallel",
         progress_bar=True,
     )
-    mcmc.run(jax.random.PRNGKey(SEED), codes, group_sizes, n_categories, outcome)
+    mcmc.run(jax.random.PRNGKey(SEED), codes, group_sizes, predictors, n_categories, outcome)
     return mcmc
 
 
@@ -155,6 +170,7 @@ def past_vote_weights(cells: pd.DataFrame) -> np.ndarray:
 def predict_probabilities(
     samples: dict[str, jnp.ndarray],
     group_sizes: dict[str, int],
+    predictors: np.ndarray,
     codes: dict[str, np.ndarray],
     weights: np.ndarray,
 ) -> np.ndarray:
@@ -166,6 +182,7 @@ def predict_probabilities(
             group: samples[f"z_{group}"][draw] * samples[f"sigma_{group}"][draw]
             for group in group_sizes
         }
+        effects["fed13"] = effects["fed13"] + predictors @ samples["beta_fed13"][draw]
         logits = category_logits(samples["intercept"][draw], effects, codes)
         by_past_vote = jax.nn.softmax(logits, axis=1).reshape(*weights.shape, -1)
         # Past vote only corrects the sample; it is averaged out with the census weights so
@@ -223,10 +240,11 @@ def fit_question(database: Path, question: str) -> None:
     cells = load_cells(database)
     categories = category_order(survey["category"])
     sizes = effect_sizes(ridings)
+    predictors = load_predictors(database, ridings)
     outcome = pd.Categorical(survey["category"], categories=categories).codes
-    mcmc = fit(encode(survey, ridings), sizes, len(categories), outcome)
+    mcmc = fit(encode(survey, ridings), sizes, predictors, len(categories), outcome)
     probabilities = predict_probabilities(
-        mcmc.get_samples(), sizes, encode(cells, ridings), past_vote_weights(cells)
+        mcmc.get_samples(), sizes, predictors, encode(cells, ridings), past_vote_weights(cells)
     )
     demographic_cells = cells.iloc[:: len(PAST_VOTES)]
     save_draws(database, draws_frame(question, demographic_cells, categories, probabilities))

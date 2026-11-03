@@ -44,3 +44,20 @@ FROM estimate_summaries AS e
 INNER JOIN actual_shares AS a
     USING (fed23, category)
 ORDER BY e.fed23, e.category;
+
+-- Factor that widens every interval around its mean so that 90% of the official results fall
+-- inside. It measures the error the model does not see (survey bias, local campaigns) and is
+-- applied to every question, on the assumption that this error is similar for attitudes.
+CREATE OR REPLACE TABLE analytics.interval_scale AS
+WITH needed_scales AS (
+    SELECT
+        CASE
+            WHEN actual_share < estimate_mean
+                THEN (estimate_mean - actual_share) / (estimate_mean - estimate_low)
+            ELSE (actual_share - estimate_mean) / (estimate_high - estimate_mean)
+        END AS needed_scale
+    FROM analytics.vote_gaps
+)
+
+SELECT quantile_cont(needed_scale, 0.9) AS scale
+FROM needed_scales;
