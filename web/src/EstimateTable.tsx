@@ -14,7 +14,10 @@ type SortKey = "fed23_name" | "estimate_mean";
 
 const percent = (share: number) => (100 * share).toFixed(1);
 
-export default function EstimateTable({ estimates }: { estimates: Estimate[] }) {
+type Props = { estimates: Estimate[]; isOfficial: boolean };
+
+// An official result is a count, not an estimate: it is shown without an interval.
+export default function EstimateTable({ estimates, isOfficial }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("estimate_mean");
   const [ascending, setAscending] = useState(false);
 
@@ -40,12 +43,15 @@ export default function EstimateTable({ estimates }: { estimates: Estimate[] }) 
           <tr>
             <th onClick={() => sortBy("fed23_name")}>Riding{arrow("fed23_name")}</th>
             <th className="center" onClick={() => sortBy("estimate_mean")}>
-              MRP %{arrow("estimate_mean")}
+              {isOfficial ? "Result %" : "MRP %"}
+              {arrow("estimate_mean")}
             </th>
-            <th>
-              90% interval (%)
-              <IntervalAxis />
-            </th>
+            {!isOfficial && (
+              <th>
+                90% interval (%)
+                <IntervalAxis />
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -55,20 +61,26 @@ export default function EstimateTable({ estimates }: { estimates: Estimate[] }) 
                 <a href={`#/riding/${estimate.fed23}`}>{estimate.fed23_name}</a>{" "}
                 <span className="province">{estimate.province}</span>
               </td>
-              <td>
-                <div className="estimate">
-                  <span className="bound">{percent(estimate.estimate_low)}</span>
-                  <span>{percent(estimate.estimate_mean)}</span>
-                  <span className="bound">{percent(estimate.estimate_high)}</span>
-                </div>
-              </td>
-              <td>
-                <IntervalBar
-                  low={estimate.estimate_low}
-                  mean={estimate.estimate_mean}
-                  high={estimate.estimate_high}
-                />
-              </td>
+              {isOfficial ? (
+                <td className="center">{percent(estimate.estimate_mean)}</td>
+              ) : (
+                <>
+                  <td>
+                    <div className="estimate">
+                      <span className="bound">{percent(estimate.estimate_low)}</span>
+                      <span>{percent(estimate.estimate_mean)}</span>
+                      <span className="bound">{percent(estimate.estimate_high)}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <IntervalBar
+                      low={estimate.estimate_low}
+                      mean={estimate.estimate_mean}
+                      high={estimate.estimate_high}
+                    />
+                  </td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>
