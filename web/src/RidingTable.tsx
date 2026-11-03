@@ -1,5 +1,5 @@
 import { useState } from "react";
-import IntervalBar from "./IntervalBar";
+import IntervalBar, { IntervalAxis } from "./IntervalBar";
 
 export type Riding = {
   fed23: number;
@@ -66,7 +66,10 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
                 {column.key === sortKey ? (ascending ? " ↑" : " ↓") : ""}
               </th>
             ))}
-            <th>90% interval and result</th>
+            <th>
+              90% interval and result (%)
+              <IntervalAxis />
+            </th>
           </tr>
         </thead>
         <tbody>
