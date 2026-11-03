@@ -1,5 +1,5 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { openDatabase } from "./duckdb";
 import RidingTable, { type Riding } from "./RidingTable";
 import ridingsQuery from "./ridings.sql?raw";
@@ -15,6 +15,10 @@ const PARTIES: { code: string; color: string }[] = [
 // West to east, then the territories, as in most Canadian tables.
 const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "YT", "NT", "NU"];
 
+// Lets "montreal" match "Montréal" and "quebec" match "Québec".
+const normalize = (text: string) =>
+  text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
 async function loadRidings(con: AsyncDuckDBConnection, party: string): Promise<Riding[]> {
   const statement = await con.prepare(ridingsQuery);
   const result = await statement.query(party);
@@ -26,19 +30,36 @@ export default function App() {
   const [con, setCon] = useState<AsyncDuckDBConnection | null>(null);
   const [party, setParty] = useState(PARTIES[0]);
   const [province, setProvince] = useState("");
+  const [search, setSearch] = useState("");
+  const searchInput = useRef<HTMLInputElement>(null);
   const [allRidings, setRidings] = useState<Riding[]>([]);
 
   useEffect(() => {
     openDatabase().then(setCon);
   }, []);
 
+  // "/" jumps to the search box, as on GitHub; it is ignored while typing in a field.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const isTyping = event.target instanceof HTMLInputElement;
+      if (event.key === "/" && !isTyping) {
+        event.preventDefault();
+        searchInput.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   useEffect(() => {
     if (con) loadRidings(con, party.code).then(setRidings);
   }, [con, party]);
 
-  const ridings = province
-    ? allRidings.filter((riding) => riding.province === province)
-    : allRidings;
+  const ridings = allRidings.filter(
+    (riding) =>
+      (province === "" || riding.province === province) &&
+      normalize(riding.fed23_name).includes(normalize(search)),
+  );
   const covered = ridings.filter((riding) => riding.is_covered).length;
   const meanGap = ridings.reduce((sum, riding) => sum + Math.abs(riding.gap), 0) / ridings.length;
 
@@ -64,11 +85,24 @@ export default function App() {
             <option key={code}>{code}</option>
           ))}
         </select>
+        <input
+          ref={searchInput}
+          type="search"
+          placeholder="Search riding (press /)"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setSearch("");
+              event.currentTarget.blur();
+            }
+          }}
+        />
       </div>
       {con === null ? (
         <p className="subtitle">Loading data...</p>
       ) : ridings.length === 0 ? (
-        <p className="stats">No candidate from this party in this province.</p>
+        <p className="stats">No riding matches.</p>
       ) : (
         <>
           <p className="stats">
