@@ -17,6 +17,9 @@ mrp:
 	uv run python -m pipeline.mrp vote_post
 	uv run python -m pipeline.mrp vote_pre
 
+export:
+	uv run python -m pipeline.export
+
 TABLE ?= staging.candidates
 QUERY = uv run python -c "import duckdb, sys; duckdb.connect('data/ces.duckdb', read_only=True).sql(sys.argv[1]).show(max_rows=50)"
 
@@ -36,4 +39,4 @@ lint:
 test:
 	uv run pytest
 
-.PHONY: install extract build mrp tables show ui lint test
+.PHONY: install extract build mrp export tables show ui lint test

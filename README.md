@@ -15,6 +15,7 @@ make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
 make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~30 s)
 make mrp       # fits the MRP model for both survey waves (~10 min)
+make export    # writes the website data to web/public/data/ as Parquet
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
 make ui        # DuckDB web UI, read-only
