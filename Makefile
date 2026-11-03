@@ -3,6 +3,7 @@ install:
 
 extract:
 	uv run python -m pipeline.extract.results
+	uv run python -m pipeline.extract.results_2021
 	uv run python -m pipeline.extract.boundaries
 	uv run python -m pipeline.extract.dissemination_areas
 	uv run python -m pipeline.extract.census
@@ -13,7 +14,8 @@ build:
 	uv run python -m pipeline.ipf
 
 mrp:
-	uv run python -m pipeline.mrp
+	uv run python -m pipeline.mrp vote_post
+	uv run python -m pipeline.mrp vote_pre
 
 TABLE ?= staging.candidates
 QUERY = uv run python -c "import duckdb, sys; duckdb.connect('data/ces.duckdb', read_only=True).sql(sys.argv[1]).show(max_rows=50)"

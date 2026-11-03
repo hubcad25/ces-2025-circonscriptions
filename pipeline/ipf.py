@@ -36,7 +36,8 @@ def rake(
     for _ in range(MAX_ITERATIONS):
         cells *= safe_ratio(age_gender_language, cells.sum(axis=(3, 5)))[:, :, :, None, :, None]
         cells *= safe_ratio(gender_education, cells.sum(axis=(1, 4, 5)))[:, None, :, :, None, None]
-        cells *= safe_ratio(riding_past_vote, cells.sum(axis=(1, 2, 3, 4)))[:, None, None, None, None, :]
+        past_vote_ratio = safe_ratio(riding_past_vote, cells.sum(axis=(1, 2, 3, 4)))
+        cells *= past_vote_ratio[:, None, None, None, None, :]
         gap = max(
             np.abs(cells.sum(axis=(3, 5)) - age_gender_language).max(),
             np.abs(cells.sum(axis=(1, 4, 5)) - gender_education).max(),
