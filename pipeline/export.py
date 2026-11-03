@@ -37,6 +37,19 @@ FROM parts
 GROUP BY part.path[1]
 """
 
+# Canada's outline, coarse (3 km), used by the map to keep place names inside Canada.
+CANADA_QUERY = """
+SELECT ST_Transform(
+    ST_SimplifyPreserveTopology(
+        ST_Union_Agg(ST_SimplifyPreserveTopology(geom::GEOMETRY, 500)), 3000
+    ),
+    'EPSG:3347',
+    'EPSG:4326',
+    always_xy := true
+) AS geom
+FROM staging.ridings_2023
+"""
+
 
 def export(database: Path, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
@@ -45,10 +58,13 @@ def export(database: Path, destination: Path) -> None:
             path = destination / f"{table}.parquet"
             con.execute(f"COPY analytics.{table} TO '{path}' (FORMAT parquet, COMPRESSION zstd)")
         con.execute("LOAD spatial")
-        con.execute(f"""
-            COPY ({RIDINGS_QUERY}) TO '{destination / "ridings.geojson"}'
-            WITH (FORMAT GDAL, DRIVER 'GeoJSON', LAYER_CREATION_OPTIONS 'COORDINATE_PRECISION=5')
-        """)
+        for name, query in [("ridings", RIDINGS_QUERY), ("canada", CANADA_QUERY)]:
+            con.execute(f"""
+                COPY ({query}) TO '{destination / f"{name}.geojson"}'
+                WITH (
+                    FORMAT GDAL, DRIVER 'GeoJSON', LAYER_CREATION_OPTIONS 'COORDINATE_PRECISION=5'
+                )
+            """)
 
 
 if __name__ == "__main__":

@@ -1,13 +1,12 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
+import type { FeatureCollection, MultiPolygon } from "geojson";
 import { useEffect, useRef } from "react";
 
-// MapLibre fetches the file from a web worker, where only absolute URLs resolve.
-const RIDINGS_URL = new URL(
-  `${import.meta.env.BASE_URL}data/ridings.geojson`,
-  window.location.href,
-).href;
+// MapLibre fetches files from a web worker, where only absolute URLs resolve.
+const dataUrl = (name: string) =>
+  new URL(`${import.meta.env.BASE_URL}data/${name}`, window.location.href).href;
 
 // MapLibre 6 ships its web worker as a separate file that the bundler must serve.
 maplibregl.setWorkerUrl(workerUrl);
@@ -19,14 +18,23 @@ const BOUNDS: maplibregl.LngLatBoundsLike = [
   [-52.6, 63],
 ];
 
+const BACKGROUND = "#15171a";
 const LOW_COLOR = "#eef0f2";
 const FILTERED_OUT_COLOR = "#2a2d31";
 
-// A plain background instead of map tiles: no external service, no API key.
+// A minimal style: only city and town names come from OpenFreeMap (free vector tiles, no API
+// key), so that zooming in does not bring roads, buildings or parks.
 const STYLE: maplibregl.StyleSpecification = {
   version: 8,
-  sources: {},
-  layers: [{ id: "background", type: "background", paint: { "background-color": "#15171a" } }],
+  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  sources: {
+    openmaptiles: {
+      type: "vector",
+      url: "https://tiles.openfreemap.org/planet",
+      attribution: "OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "background", type: "background", paint: { "background-color": BACKGROUND } }],
 };
 
 type Located = { fed23: number; estimate_mean: number };
@@ -60,6 +68,46 @@ function showEstimates(map: maplibregl.Map, { ridings, color }: Props) {
   }
 }
 
+async function addLayers(map: maplibregl.Map) {
+  const canada: FeatureCollection = await (await fetch(dataUrl("canada.geojson"))).json();
+
+  // promoteId lets the estimates be attached to each riding by its code.
+  map.addSource("ridings", {
+    type: "geojson",
+    data: dataUrl("ridings.geojson"),
+    promoteId: "fed23",
+  });
+  map.addLayer({ id: "fill", type: "fill", source: "ridings" });
+  map.addLayer({
+    id: "outline",
+    type: "line",
+    source: "ridings",
+    paint: { "line-color": BACKGROUND, "line-width": 0.4 },
+  });
+  map.addLayer({
+    id: "places",
+    type: "symbol",
+    source: "openmaptiles",
+    "source-layer": "place",
+    // Cities from the start, towns once zoomed in; places outside Canada are left out.
+    filter: [
+      "all",
+      ["within", canada.features[0].geometry as MultiPolygon],
+      [
+        "any",
+        ["==", ["get", "class"], "city"],
+        ["all", ["==", ["get", "class"], "town"], [">=", ["zoom"], 7]],
+      ],
+    ],
+    layout: {
+      "text-field": ["coalesce", ["get", "name_en"], ["get", "name"]],
+      "text-font": ["Noto Sans Regular"],
+      "text-size": ["interpolate", ["linear"], ["zoom"], 3, 11, 9, 14],
+    },
+    paint: { "text-color": "#ffffff", "text-halo-color": BACKGROUND, "text-halo-width": 1.5 },
+  });
+}
+
 export default function RidingMap({ ridings, color }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -77,21 +125,14 @@ export default function RidingMap({ ridings, color }: Props) {
         [-160, 35],
         [-35, 66],
       ],
-      attributionControl: false,
+      maxZoom: 11,
+      attributionControl: { compact: true },
     });
     // Offset so the popup never sits under the cursor, which would hide the riding below it.
     const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
 
-    instance.on("load", () => {
-      // promoteId lets the estimates be attached to each riding by its code.
-      instance.addSource("ridings", { type: "geojson", data: RIDINGS_URL, promoteId: "fed23" });
-      instance.addLayer({ id: "fill", type: "fill", source: "ridings" });
-      instance.addLayer({
-        id: "outline",
-        type: "line",
-        source: "ridings",
-        paint: { "line-color": "#15171a", "line-width": 0.4 },
-      });
+    instance.on("load", async () => {
+      await addLayers(instance);
       loaded.current = true;
       showEstimates(instance, latest.current);
     });
