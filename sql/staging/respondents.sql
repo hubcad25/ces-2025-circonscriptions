@@ -33,8 +33,15 @@ SELECT
         WHEN cps25_education = 7 THEN 'below_bachelor'
         WHEN cps25_education IN (9, 10, 11) THEN 'bachelor_plus'
     END AS education,
-    cps25_language_1 = 1 AS learned_english,
-    cps25_language_2 = 1 AS learned_french,
+    -- Mother tongue as in the census. The CES allows several childhood languages; respondents
+    -- who learned both English and French are classified by the language of the interview.
+    CASE
+        WHEN cps25_language_1 = 1 AND cps25_language_2 = 1 THEN
+            CASE cps25_UserLanguage WHEN 'FR-CA' THEN 'french' ELSE 'english' END
+        WHEN cps25_language_2 = 1 THEN 'french'
+        WHEN cps25_language_1 = 1 THEN 'english'
+        ELSE 'other'
+    END AS language,
     cps25_weight_general_restricted IS NOT NULL AS in_restricted_sample,
     pes25_ResponseId <> '' AS in_post_election_wave,
     cps25_weight_general_all AS weight_cps,
