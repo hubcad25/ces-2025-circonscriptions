@@ -119,6 +119,31 @@ td {
   text-align: right;
 }
 
+.center {
+  text-align: center;
+}
+
+.estimate {
+  display: grid;
+  grid-template-columns: 3em auto 3em;
+  gap: 6px;
+  align-items: baseline;
+  text-align: center;
+}
+
+.bound:first-child {
+  text-align: right;
+}
+
+.bound {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.bound:last-child {
+  text-align: left;
+}
+
 .miss {
   color: var(--miss);
 }

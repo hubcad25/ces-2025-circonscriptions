@@ -14,12 +14,13 @@ export type Riding = {
 
 type SortKey = "fed23_name" | "estimate_mean" | "actual_share" | "gap" | "is_covered";
 
-const COLUMNS: { key: SortKey; label: string; isNumber: boolean }[] = [
-  { key: "fed23_name", label: "Riding", isNumber: false },
-  { key: "estimate_mean", label: "MRP %", isNumber: true },
-  { key: "actual_share", label: "Result %", isNumber: true },
-  { key: "gap", label: "Gap (pts)", isNumber: true },
-  { key: "is_covered", label: "Interval", isNumber: false },
+// The class sets the header alignment so that it lines up with the values below.
+const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
+  { key: "fed23_name", label: "Riding" },
+  { key: "estimate_mean", label: "MRP %", className: "center" },
+  { key: "actual_share", label: "Result %", className: "number" },
+  { key: "gap", label: "Gap (pts)", className: "number" },
+  { key: "is_covered", label: "Interval" },
 ];
 
 const percent = (share: number) => (100 * share).toFixed(1);
@@ -57,7 +58,7 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
             {COLUMNS.map((column) => (
               <th
                 key={column.key}
-                className={column.isNumber ? "number" : undefined}
+                className={column.className}
                 onClick={() => sortBy(column.key)}
               >
                 {column.label}
@@ -71,7 +72,13 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
           {sorted.map((riding) => (
             <tr key={riding.fed23}>
               <td>{riding.fed23_name}</td>
-              <td className="number">{percent(riding.estimate_mean)}</td>
+              <td>
+                <div className="estimate">
+                  <span className="bound">{percent(riding.estimate_low)}</span>
+                  <span>{percent(riding.estimate_mean)}</span>
+                  <span className="bound">{percent(riding.estimate_high)}</span>
+                </div>
+              </td>
               <td className="number">{percent(riding.actual_share)}</td>
               <td
                 className="number gap"
