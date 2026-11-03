@@ -1,7 +1,7 @@
 [project]
 name = "ces-2025-circonscriptions"
 version = "0.1.0"
-description = "Estimations MRP par circonscription à partir de l'Étude électorale canadienne 2025"
+description = "MRP estimates by federal riding from the 2025 Canadian Election Study"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "duckdb>=2.0.0",
