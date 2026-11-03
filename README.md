@@ -64,3 +64,4 @@ Current tables:
 
 - The CES under-represents people whose mother tongue is neither English nor French (6.7% of respondents vs 23.4% of adults in the census); poststratification restores their weight, but those cells rely on few respondents.
 - Within a riding, the link between education and language is not constrained by any census table.
+- Model intervals only reflect sampling uncertainty: on the 2025 vote, 90% intervals cover 71% of official results. Every interval is widened by a factor k (1.46, `analytics.interval_scale`) calibrated on the vote, assuming attitudes carry similar non-sampling error.
