@@ -7,16 +7,34 @@ from pipeline.load import DATABASE
 DESTINATION = Path("web/public/data")
 TABLES = ["fed_summaries", "vote_gaps"]
 
-# Boundaries are simplified to 200 m, well below the size of the smallest riding (6.7 km²),
-# which keeps the file near 400 kB once compressed. Web maps expect longitude/latitude.
+# Boundaries are simplified to 500 m, below the size of the smallest riding (6.7 km²),
+# which keeps the file near 650 kB once compressed. Ridings are simplified together as a
+# coverage so that neighbours keep a shared border, without gaps or overlaps. Web maps expect
+# longitude/latitude.
 RIDINGS_QUERY = """
+WITH simplified AS (
+    SELECT
+        list(fed23 ORDER BY fed23) AS ridings,
+        list(fed23_name ORDER BY fed23) AS names,
+        ST_CoverageSimplify_Agg(geom::GEOMETRY, 500.0 ORDER BY fed23) AS coverage
+    FROM staging.ridings_2023
+),
+
+-- The first path element is the riding's position in the coverage; ridings made of several
+-- polygons (islands) come out as several parts with the same position.
+parts AS (
+    SELECT unnest(ST_Dump(coverage)) AS part, ridings, names
+    FROM simplified
+)
+
 SELECT
-    fed23,
-    fed23_name,
+    any_value(ridings[part.path[1]]) AS fed23,
+    any_value(names[part.path[1]]) AS fed23_name,
     ST_Transform(
-        ST_SimplifyPreserveTopology(geom, 200), 'EPSG:3347', 'EPSG:4326', always_xy := true
+        ST_Collect(list(part.geom)), 'EPSG:3347', 'EPSG:4326', always_xy := true
     ) AS geom
-FROM staging.ridings_2023
+FROM parts
+GROUP BY part.path[1]
 """
 
 

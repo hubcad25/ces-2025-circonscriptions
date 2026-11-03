@@ -3,6 +3,7 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { openDatabase } from "./duckdb";
 import { PARTIES } from "./parties";
 import RidingPage from "./RidingPage";
+import RidingMap from "./RidingMap";
 import RidingTable, { type Riding } from "./RidingTable";
 import ridingsQuery from "./ridings.sql?raw";
 
@@ -76,6 +77,7 @@ export default function App() {
     );
   }
 
+  const view = hash === "#/map" ? "map" : "validation";
   const ridings = allRidings.filter(
     (riding) =>
       (province === "" || riding.province === province) &&
@@ -86,9 +88,19 @@ export default function App() {
 
   return (
     <main style={{ "--party": party.color } as CSSProperties}>
-      <h1>2025 federal vote by riding</h1>
+      <nav className="tabs">
+        <a href="#/" aria-current={view === "validation" ? "page" : undefined}>
+          Validation
+        </a>
+        <a href="#/map" aria-current={view === "map" ? "page" : undefined}>
+          Map
+        </a>
+      </nav>
+      <h1>{view === "map" ? "2025 federal vote by riding" : "Model validation on the 2025 vote"}</h1>
       <p className="subtitle">
-        MRP estimates from the Canadian Election Study, compared with the official results.
+        {view === "map"
+          ? "MRP estimates from the Canadian Election Study."
+          : "MRP estimates from the Canadian Election Study, compared with the official results."}
       </p>
       <div className="controls">
         {WAVES.map((option) => (
@@ -136,6 +148,8 @@ export default function App() {
         <p className="subtitle">Loading data...</p>
       ) : ridings.length === 0 ? (
         <p className="stats">No riding matches.</p>
+      ) : view === "map" ? (
+        <RidingMap ridings={ridings} color={party.color} />
       ) : (
         <>
           <p className="stats">
