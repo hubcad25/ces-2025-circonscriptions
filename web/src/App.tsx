@@ -19,15 +19,6 @@ async function loadRidings(con: AsyncDuckDBConnection, party: string): Promise<R
   return result.toArray().map((row) => row.toJSON() as Riding);
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="stat">
-      <div className="stat-value">{value}</div>
-      <div className="stat-label">{label}</div>
-    </div>
-  );
-}
-
 export default function App() {
   const [con, setCon] = useState<AsyncDuckDBConnection | null>(null);
   const [party, setParty] = useState(PARTIES[0]);
@@ -65,14 +56,12 @@ export default function App() {
         <p className="subtitle">Loading data...</p>
       ) : (
         <>
-          <div className="stats">
-            <Stat value={String(ridings.length)} label="ridings" />
-            <Stat value={`${(100 * meanGap).toFixed(1)} pts`} label="mean absolute gap" />
-            <Stat
-              value={`${Math.round((100 * covered) / ridings.length)}%`}
-              label="results within the 90% interval"
-            />
-          </div>
+          <p className="stats">
+            <strong>{ridings.length}</strong> ridings · mean absolute gap{" "}
+            <strong>{(100 * meanGap).toFixed(1)} pts</strong> ·{" "}
+            <strong>{Math.round((100 * covered) / ridings.length)}%</strong> of results within
+            the 90% interval
+          </p>
           <RidingTable ridings={ridings} />
           <p className="note">
             Bar: 90% interval of the estimate, widened by a factor calibrated on this vote; dot:
