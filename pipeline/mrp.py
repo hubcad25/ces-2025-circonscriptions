@@ -19,6 +19,10 @@ N_SAMPLES = 500
 N_DRAWS = 100
 SEED = 2025
 
+# JAX sees a single CPU device by default; one device per chain lets the chains run in parallel.
+# This must run before JAX first uses the CPU.
+numpyro.set_host_device_count(N_CHAINS)
+
 SURVEY_QUERY = """
 SELECT o.category, r.fed13, r.age_group, r.gender, r.education, r.language, r.past_vote
 FROM analytics.mrp_outcomes AS o
@@ -135,7 +139,7 @@ def fit(
         num_warmup=N_WARMUP,
         num_samples=N_SAMPLES,
         num_chains=N_CHAINS,
-        chain_method="sequential",
+        chain_method="parallel",
         progress_bar=True,
     )
     mcmc.run(jax.random.PRNGKey(SEED), codes, group_sizes, n_categories, outcome)
