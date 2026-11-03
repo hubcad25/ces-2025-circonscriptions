@@ -71,7 +71,7 @@ Current tables:
 - `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts (`vote_post`, `vote_pre`: LPC, CPC, NDP, BQ, OTH)
 - `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
 - `analytics.fed_estimates`: poststratified share per 2023 riding × category × draw
-- `analytics.vote_gaps`, `analytics.interval_scale`: `vote_post` estimates against the 2025 results (mean absolute gap 3.94 points), and the interval widening factor calibrated on them
+- `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.94 points for `vote_post`, 5.16 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
 
 ## Known limitations
 

@@ -1,5 +1,5 @@
--- One row per 2023 riding for the chosen party: the MRP estimate of the post-election vote,
--- with its widened interval, against the official 2025 result.
+-- One row per 2023 riding for the chosen vote question and party: the MRP estimate, with its
+-- widened interval, against the official 2025 result.
 SELECT
     s.fed23,
     s.fed23_name,
@@ -18,5 +18,5 @@ SELECT
     g.actual_share BETWEEN s.estimate_low AND s.estimate_high AS is_covered
 FROM 'fed_summaries.parquet' AS s
 INNER JOIN 'vote_gaps.parquet' AS g
-    USING (fed23, category)
-WHERE s.question = 'vote_post' AND s.category = ?
+    USING (question, fed23, category)
+WHERE s.question = ? AND s.category = ?

@@ -101,6 +101,12 @@ a:hover {
   font-size: 11px;
 }
 
+.controls button.wave[aria-pressed="true"] {
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
 .controls button[aria-pressed="true"] {
   border-color: var(--party);
   background: var(--party);

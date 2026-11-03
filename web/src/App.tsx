@@ -13,15 +13,25 @@ const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "
 const normalize = (text: string) =>
   text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
-async function loadRidings(con: AsyncDuckDBConnection, party: string): Promise<Riding[]> {
+const WAVES = [
+  { code: "vote_post", label: "Reported vote" },
+  { code: "vote_pre", label: "Vote intention" },
+];
+
+async function loadRidings(
+  con: AsyncDuckDBConnection,
+  question: string,
+  party: string,
+): Promise<Riding[]> {
   const statement = await con.prepare(ridingsQuery);
-  const result = await statement.query(party);
+  const result = await statement.query(question, party);
   await statement.close();
   return result.toArray().map((row) => row.toJSON() as Riding);
 }
 
 export default function App() {
   const [con, setCon] = useState<AsyncDuckDBConnection | null>(null);
+  const [wave, setWave] = useState(WAVES[0].code);
   const [party, setParty] = useState(PARTIES[0]);
   const [province, setProvince] = useState("");
   const [search, setSearch] = useState("");
@@ -54,8 +64,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (con) loadRidings(con, party.code).then(setRidings);
-  }, [con, party]);
+    if (con) loadRidings(con, wave, party.code).then(setRidings);
+  }, [con, wave, party]);
 
   const ridingMatch = hash.match(/^#\/riding\/(\d+)$/);
   if (con && ridingMatch) {
@@ -80,6 +90,18 @@ export default function App() {
       <p className="subtitle">
         MRP estimates from the Canadian Election Study, compared with the official results.
       </p>
+      <div className="controls">
+        {WAVES.map((option) => (
+          <button
+            key={option.code}
+            className="wave"
+            aria-pressed={option.code === wave}
+            onClick={() => setWave(option.code)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
       <div className="controls">
         {PARTIES.map((option) => (
           <button
@@ -124,7 +146,7 @@ export default function App() {
           </p>
           <RidingTable ridings={ridings} />
           <p className="note">
-            Bar: 90% interval of the estimate, widened by a factor calibrated on this vote; dot:
+            Bar: 90% interval of the estimate, widened by a factor calibrated on the reported vote; dot:
             estimate; line: official result. Gap = estimate minus result: red when the model
             overestimates, blue when it underestimates.
           </p>
