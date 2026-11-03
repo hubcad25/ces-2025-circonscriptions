@@ -43,16 +43,18 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 
 ## Structure
 
-- `pipeline/`: Python scripts (source extraction, running the SQL layers, census raking)
+- `pipeline/`: Python scripts (source extraction, running the SQL layers, census raking, MRP model)
 - `sql/raw`: sources as received
 - `sql/staging`: cleaned data, one table per source
 - `sql/analytics`: analysis tables
+- `sql/estimates`: poststratification and validation, run after the MRP model
 - `tests/`: data quality checks
 
 Current tables:
 - `raw.results`: raw Elections Canada export
+- `raw.results_2021`, `raw.turnout_2021`: 2021 Elections Canada results and turnout, on 2013 boundaries
 - `raw.ces`, `raw.ces_variables`, `raw.ces_value_labels`: the CES Stata file, converted to Parquet because DuckDB cannot read Stata
-- `staging.respondents`: one row per CES respondent with 2013 riding, province and census-aligned age, gender, education and mother tongue; non-binary respondents (0.8%) are grouped with men, since the census only publishes "Men+" and "Women+"; respondents who learned both English and French as children are classified by the language of the interview
+- `staging.respondents`: one row per CES respondent with 2013 riding, province and census-aligned age, gender, education and mother tongue, plus recalled 2021 vote (`past_vote`, "don't know" left null); non-binary respondents (0.8%) are grouped with men, since the census only publishes "Men+" and "Women+"; respondents who learned both English and French as children are classified by the language of the interview
 - `staging.responses`: long format, one row per respondent × coded question (4.7M rows, 469 questions)
 - `staging.variables`, `staging.value_labels`: question wording, survey wave and answer labels
 - `staging.candidates`: one row per candidate; the party is parsed from the bilingual suffix attached to the name, the six main parties are kept apart, others are grouped as `OTH`
@@ -61,8 +63,14 @@ Current tables:
 - `staging.riding_population`: official population by riding, 2013 and 2023 boundaries
 - `staging.census_age_gender_language`, `staging.census_education_gender`, `staging.census_province_education`: census counts used to build poststratification cells
 - `analytics.fed_crosswalk`: share of each 2013 riding's population in each 2023 riding, from a spatial join of blocks; a dissemination area's population is split evenly across its blocks (median gap with official riding populations 0.16%, max 4.2%)
-- `analytics.census_cells`: adults by 2013 riding × age (8) × gender (2) × education (4) × mother tongue (3), built by iterative proportional fitting: a provincial age × gender × education structure is raked to each riding's age × gender × language and education × gender counts, since the census does not publish education by age for ridings
+- `analytics.census_cells`: adults by 2013 riding × age (8) × gender (2) × education (4) × mother tongue (3) × 2021 vote (6, non-voters included), built by iterative proportional fitting: a provincial age × gender × education structure, times the survey's 2021 vote by province and age, is raked to each riding's age × gender × language, education × gender and 2021 vote counts, since the census does not publish education by age for ridings
 - `analytics.results_fed`: one row per riding × party (votes, share, rank, winner, lead over the next party); 343 ridings, matches the official seat count (169 LPC, 144 CPC, 22 BQ, 7 NDP, 1 GPC)
+- `analytics.past_vote_fed`: share of 2021 electors by vote per 2013 riding, non-voters as `NONE`
+- `analytics.fed_predictors`: standardized riding predictors for the MRP model (French and other mother tongue, bachelor's degree, log density)
+- `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts (`vote_post`, `vote_pre`: LPC, CPC, NDP, BQ, OTH)
+- `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
+- `analytics.fed_estimates`: poststratified share per 2023 riding × category × draw
+- `analytics.vote_gaps`, `analytics.interval_scale`: `vote_post` estimates against the 2025 results (mean absolute gap 3.95 points), and the interval widening factor calibrated on them
 
 ## Known limitations
 
