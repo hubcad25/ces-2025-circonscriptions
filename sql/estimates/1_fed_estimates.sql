@@ -1,7 +1,8 @@
 CREATE SCHEMA IF NOT EXISTS analytics;
 
--- Poststratify the MRP draws with the census cells of each 2013 riding, then recompose the
--- 2013 ridings into 2023 ridings with the crosswalk shares, which sum to one per 2023 riding.
+-- Poststratify the MRP draws with the census cells of each 2013 riding, recompose the 2013
+-- ridings into 2023 ridings with the crosswalk shares, which sum to one per 2023 riding, then
+-- drop parties that ran no candidate in a riding.
 CREATE OR REPLACE TABLE analytics.fed_estimates AS
 WITH demographic_cells AS (
     SELECT fed13, age_group, gender, education, language, sum(n) AS n
@@ -33,7 +34,22 @@ fed23_estimates AS (
     INNER JOIN analytics.fed_crosswalk AS x
         USING (fed13)
     GROUP BY e.question, e.draw, x.fed23, e.category
+),
+
+candidate_estimates AS (
+    SELECT
+        e.*,
+        CASE WHEN x.category IS NULL THEN e.estimate ELSE 0 END AS kept_estimate
+    FROM fed23_estimates AS e
+    LEFT JOIN analytics.fed_exclusions AS x
+        USING (question, fed23, category)
 )
 
-SELECT * FROM fed23_estimates
+SELECT
+    question,
+    draw,
+    fed23,
+    category,
+    kept_estimate / sum(kept_estimate) OVER (PARTITION BY question, draw, fed23) AS estimate
+FROM candidate_estimates
 ORDER BY question, category, fed23, draw;

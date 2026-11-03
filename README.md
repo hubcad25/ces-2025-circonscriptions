@@ -70,8 +70,11 @@ Current tables:
 - `analytics.fed_predictors`: standardized riding predictors for the MRP model (French and other mother tongue, bachelor's degree, log density)
 - `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts (`vote_post`, `vote_pre`: LPC, CPC, NDP, BQ, OTH)
 - `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
-- `analytics.fed_estimates`: poststratified share per 2023 riding × category × draw
-- `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.94 points for `vote_post`, 5.16 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
+- `analytics.mrp_exclusions`: categories that cannot occur in a province (a party with no candidate there, i.e. the Bloc outside Quebec); the model gives them a probability of zero
+- `analytics.fed_exclusions`: parties with no candidate in a 2023 riding (3 ridings in 2025, plus the Bloc outside Quebec)
+- `analytics.fed_estimates`: poststratified share per 2023 riding × category × draw; a party with no candidate in the riding is set to zero and the other shares are rescaled
+- `analytics.fed_summaries`: mean and widened 90% interval per question × 2023 riding × category, as read by the website
+- `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.92 points for `vote_post`, 5.14 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
 
 ## Known limitations
 
