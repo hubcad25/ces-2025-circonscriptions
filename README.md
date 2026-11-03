@@ -13,8 +13,9 @@ Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12).
 ```bash
 make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
-make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~30 s)
+make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
 make mrp       # fits the MRP model for both survey waves (~10 min)
+make export    # writes the website data to web/public/data/ as Parquet
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
 make ui        # DuckDB web UI, read-only
@@ -70,10 +71,10 @@ Current tables:
 - `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts (`vote_post`, `vote_pre`: LPC, CPC, NDP, BQ, OTH)
 - `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
 - `analytics.fed_estimates`: poststratified share per 2023 riding × category × draw
-- `analytics.vote_gaps`, `analytics.interval_scale`: `vote_post` estimates against the 2025 results (mean absolute gap 3.95 points), and the interval widening factor calibrated on them
+- `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.94 points for `vote_post`, 5.16 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
 
 ## Known limitations
 
 - The CES under-represents people whose mother tongue is neither English nor French (6.7% of respondents vs 23.4% of adults in the census); poststratification restores their weight, but those cells rely on few respondents.
 - Within a riding, the link between education and language is not constrained by any census table.
-- Model intervals only reflect sampling uncertainty: on the 2025 vote, 90% intervals cover 71% of official results. Every interval is widened by a factor k (1.46, `analytics.interval_scale`) calibrated on the vote, assuming attitudes carry similar non-sampling error.
+- Model intervals only reflect sampling uncertainty: on the 2025 vote, 90% intervals cover 72% of official results. Every interval is widened by a factor k (1.45, `analytics.interval_scale`) calibrated on the vote, assuming attitudes carry similar non-sampling error.
