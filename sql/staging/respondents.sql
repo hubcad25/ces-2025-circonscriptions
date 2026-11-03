@@ -42,6 +42,16 @@ SELECT
         WHEN cps25_language_1 = 1 THEN 'english'
         ELSE 'other'
     END AS language,
+    -- Recalled 2021 vote, with the same categories as analytics.past_vote_fed. Respondents who
+    -- were not eligible count as non-voters, since the 2021 shares are computed over electors.
+    CASE
+        WHEN cps25_turnout_2021 IN (2, 3) THEN 'NONE'
+        WHEN cps25_turnout_2021 = 1 THEN
+            CASE cps25_vote_2021
+                WHEN 1 THEN 'LPC' WHEN 2 THEN 'CPC' WHEN 3 THEN 'NDP' WHEN 4 THEN 'BQ'
+                WHEN 5 THEN 'OTH' WHEN 6 THEN 'OTH'
+            END
+    END AS past_vote,
     cps25_weight_general_restricted IS NOT NULL AS in_restricted_sample,
     pes25_ResponseId <> '' AS in_post_election_wave,
     cps25_weight_general_all AS weight_cps,
