@@ -19,10 +19,9 @@ const AGREEMENT: Category[] = [
   { code: "strongly_agree", label: "Strongly agree", color: HIGH },
 ];
 
-// Codes match analytics.mrp_outcomes; categories are listed in scale order.
+// Codes match analytics.mrp_outcomes; categories are listed in scale order. Attitudes come
+// first, then the vote questions.
 export const QUESTIONS: Question[] = [
-  { code: "vote_post", label: "Reported vote (post-election wave)", categories: VOTE_CATEGORIES },
-  { code: "vote_pre", label: "Vote intention (pre-election wave)", categories: VOTE_CATEGORIES },
   {
     code: "immigration",
     label: "Canada should admit more, fewer or the same number of immigrants",
@@ -46,4 +45,6 @@ export const QUESTIONS: Question[] = [
     label: "We have gone too far in pushing bilingualism in Canada",
     categories: AGREEMENT,
   },
+  { code: "vote_post", label: "Reported vote (post-election wave)", categories: VOTE_CATEGORIES },
+  { code: "vote_pre", label: "Vote intention (pre-election wave)", categories: VOTE_CATEGORIES },
 ];
