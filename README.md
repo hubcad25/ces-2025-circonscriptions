@@ -4,7 +4,7 @@ Riding-level estimates (2023 boundaries) of vote intention and political attitud
 
 <!--- Vote estimates are compared to the official results of the April 28, 2025 election. --->
 
-Pipeline: Python and SQL (DuckDB). Static dashboard: React.
+Pipeline: Python and SQL (DuckDB). Website: https://hubcad25.github.io/ces-2025-circonscriptions/ (React, DuckDB-WASM, MapLibre), with a map and table of the estimates by riding, a page per riding, and a validation table against the official results.
 
 ## Run
 
@@ -15,7 +15,7 @@ make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
 make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
 make mrp       # fits the MRP model for both survey waves (~10 min)
-make export    # writes the website data to web/public/data/ as Parquet
+make export    # writes the website data to web/public/data/ (Parquet and GeoJSON)
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
 make ui        # DuckDB web UI, read-only
@@ -39,6 +39,7 @@ Times were measured on a 16-core laptop; `make mrp` runs four MCMC chains in par
 | Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
 | Statistics Canada | Table 98-10-0209: mother tongue by age and gender, 2013 ridings | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810020901 |
 | Statistics Canada | Table 98-10-0386: highest certificate by age and gender, provinces | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810038601 |
+| OpenFreeMap | City names on the website map (OpenMapTiles, OpenStreetMap data), loaded by the browser | https://openfreemap.org |
 
 Raw data is not versioned (`data/` is ignored by Git); the scripts download it again.
 
@@ -50,6 +51,7 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 - `sql/analytics`: analysis tables
 - `sql/estimates`: poststratification and validation, run after the MRP model
 - `tests/`: data quality checks
+- `web/`: the website (React + Vite), deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
 
 Current tables:
 - `raw.results`: raw Elections Canada export
