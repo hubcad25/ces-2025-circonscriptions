@@ -1,6 +1,6 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useState } from "react";
-import IntervalBar from "./IntervalBar";
+import IntervalBar, { IntervalAxis } from "./IntervalBar";
 import { PARTIES } from "./parties";
 import ridingQuery from "./riding.sql?raw";
 
@@ -37,7 +37,10 @@ function QuestionTable({ estimates }: { estimates: Estimate[] }) {
           <th>Party</th>
           <th className="center">MRP %</th>
           {hasResults && <th className="number">Result %</th>}
-          <th>90% interval{hasResults && " and result"}</th>
+          <th>
+            90% interval{hasResults && " and result"} (%)
+            <IntervalAxis />
+          </th>
         </tr>
       </thead>
       <tbody>
