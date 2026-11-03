@@ -53,6 +53,21 @@ h1 {
   cursor: pointer;
 }
 
+.controls select {
+  margin-left: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.province {
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .controls button[aria-pressed="true"] {
   border-color: var(--party);
   background: var(--party);

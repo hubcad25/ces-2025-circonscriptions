@@ -4,6 +4,7 @@ import IntervalBar from "./IntervalBar";
 export type Riding = {
   fed23: number;
   fed23_name: string;
+  province: string;
   estimate_mean: number;
   estimate_low: number;
   estimate_high: number;
@@ -71,7 +72,9 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
         <tbody>
           {sorted.map((riding) => (
             <tr key={riding.fed23}>
-              <td>{riding.fed23_name}</td>
+              <td>
+                {riding.fed23_name} <span className="province">{riding.province}</span>
+              </td>
               <td>
                 <div className="estimate">
                   <span className="bound">{percent(riding.estimate_low)}</span>

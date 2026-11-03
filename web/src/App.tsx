@@ -12,6 +12,9 @@ const PARTIES: { code: string; color: string }[] = [
   { code: "OTH", color: "#6b7178" },
 ];
 
+// West to east, then the territories, as in most Canadian tables.
+const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "YT", "NT", "NU"];
+
 async function loadRidings(con: AsyncDuckDBConnection, party: string): Promise<Riding[]> {
   const statement = await con.prepare(ridingsQuery);
   const result = await statement.query(party);
@@ -22,7 +25,8 @@ async function loadRidings(con: AsyncDuckDBConnection, party: string): Promise<R
 export default function App() {
   const [con, setCon] = useState<AsyncDuckDBConnection | null>(null);
   const [party, setParty] = useState(PARTIES[0]);
-  const [ridings, setRidings] = useState<Riding[]>([]);
+  const [province, setProvince] = useState("");
+  const [allRidings, setRidings] = useState<Riding[]>([]);
 
   useEffect(() => {
     openDatabase().then(setCon);
@@ -32,6 +36,9 @@ export default function App() {
     if (con) loadRidings(con, party.code).then(setRidings);
   }, [con, party]);
 
+  const ridings = province
+    ? allRidings.filter((riding) => riding.province === province)
+    : allRidings;
   const covered = ridings.filter((riding) => riding.is_covered).length;
   const meanGap = ridings.reduce((sum, riding) => sum + Math.abs(riding.gap), 0) / ridings.length;
 
@@ -51,9 +58,17 @@ export default function App() {
             {option.code}
           </button>
         ))}
+        <select value={province} onChange={(event) => setProvince(event.target.value)}>
+          <option value="">All provinces</option>
+          {PROVINCES.map((code) => (
+            <option key={code}>{code}</option>
+          ))}
+        </select>
       </div>
       {con === null ? (
         <p className="subtitle">Loading data...</p>
+      ) : ridings.length === 0 ? (
+        <p className="stats">No candidate from this party in this province.</p>
       ) : (
         <>
           <p className="stats">
