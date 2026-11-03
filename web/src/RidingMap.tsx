@@ -2,7 +2,6 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { useEffect, useRef } from "react";
-import type { Riding } from "./RidingTable";
 
 // MapLibre fetches the file from a web worker, where only absolute URLs resolve.
 const RIDINGS_URL = new URL(
@@ -30,9 +29,11 @@ const STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "background", type: "background", paint: { "background-color": "#15171a" } }],
 };
 
-type Props = { ridings: Riding[]; color: string };
+type Located = { fed23: number; estimate_mean: number };
 
-function shareRange(ridings: Riding[]): [number, number] {
+type Props = { ridings: Located[]; color: string };
+
+function shareRange(ridings: Located[]): [number, number] {
   const shares = ridings.map((riding) => riding.estimate_mean);
   return [Math.min(...shares), Math.max(...shares)];
 }
