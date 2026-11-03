@@ -31,13 +31,15 @@ make test      # data quality checks on data/ces.duckdb
 | Elections Canada | 45th general election (April 28, 2025), table 12 "Detailed results by electoral district" | https://elections.ca/res/rep/off/ovrGE45/62/data_donnees/table_tableau12.csv |
 | Natural Resources Canada | Federal electoral district boundaries, 2013 and 2023 representation orders | https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/ |
 | Statistics Canada | Representative points of 2021 dissemination blocks | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
-| Statistics Canada | 2021 Census: population by dissemination area and by riding (2013 and 2023) | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
+| Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
+| Statistics Canada | Table 98-10-0209: mother tongue by age and gender, 2013 ridings | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810020901 |
+| Statistics Canada | Table 98-10-0386: highest certificate by age and gender, provinces | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810038601 |
 
 Raw data is not versioned (`data/` is ignored by Git); the scripts download it again.
 
 ## Structure
 
-- `pipeline/`: Python scripts (source extraction, running the SQL layers)
+- `pipeline/`: Python scripts (source extraction, running the SQL layers, census raking)
 - `sql/raw`: sources as received
 - `sql/staging`: cleaned data, one table per source
 - `sql/analytics`: analysis tables
@@ -46,12 +48,19 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 Current tables:
 - `raw.results`: raw Elections Canada export
 - `raw.ces`, `raw.ces_variables`, `raw.ces_value_labels`: the CES Stata file, converted to Parquet because DuckDB cannot read Stata
-- `staging.respondents`: one row per CES respondent with 2013 riding, province and census-aligned age, gender and education; non-binary respondents (0.8%) are grouped with men, since the census only publishes "Men+" and "Women+"
+- `staging.respondents`: one row per CES respondent with 2013 riding, province and census-aligned age, gender, education and mother tongue; non-binary respondents (0.8%) are grouped with men, since the census only publishes "Men+" and "Women+"; respondents who learned both English and French as children are classified by the language of the interview
 - `staging.responses`: long format, one row per respondent × coded question (4.7M rows, 469 questions)
 - `staging.variables`, `staging.value_labels`: question wording, survey wave and answer labels
 - `staging.candidates`: one row per candidate; the party is parsed from the bilingual suffix attached to the name, the six main parties are kept apart, others are grouped as `OTH`
 - `staging.ridings_2013`, `staging.ridings_2023`: riding boundaries, in EPSG:3347
 - `staging.blocks`, `staging.da_population`: dissemination blocks (representative point) and dissemination area populations
 - `staging.riding_population`: official population by riding, 2013 and 2023 boundaries
+- `staging.census_age_gender_language`, `staging.census_education_gender`, `staging.census_province_education`: census counts used to build poststratification cells
 - `analytics.fed_crosswalk`: share of each 2013 riding's population in each 2023 riding, from a spatial join of blocks; a dissemination area's population is split evenly across its blocks (median gap with official riding populations 0.16%, max 4.2%)
+- `analytics.census_cells`: adults by 2013 riding × age (8) × gender (2) × education (4) × mother tongue (3), built by iterative proportional fitting: a provincial age × gender × education structure is raked to each riding's age × gender × language and education × gender counts, since the census does not publish education by age for ridings
 - `analytics.results_fed`: one row per riding × party (votes, share, rank, winner, lead over the next party); 343 ridings, matches the official seat count (169 LPC, 144 CPC, 22 BQ, 7 NDP, 1 GPC)
+
+## Known limitations
+
+- The CES under-represents people whose mother tongue is neither English nor French (6.7% of respondents vs 23.4% of adults in the census); poststratification restores their weight, but those cells rely on few respondents.
+- Within a riding, the link between education and language is not constrained by any census table.
