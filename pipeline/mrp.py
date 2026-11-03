@@ -11,7 +11,7 @@ import pandas as pd
 from numpyro.infer import MCMC, NUTS
 
 from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES
-from pipeline.load import DATABASE
+from pipeline.load import DATABASE, run_scripts
 
 N_CHAINS = 4
 N_WARMUP = 500
@@ -209,4 +209,7 @@ def fit_question(database: Path, question: str) -> None:
 
 
 if __name__ == "__main__":
-    fit_question(DATABASE, sys.argv[1] if len(sys.argv) > 1 else "vote_post")
+    question = sys.argv[1] if len(sys.argv) > 1 else "vote_post"
+    fit_question(DATABASE, question)
+    with duckdb.connect(DATABASE) as con:
+        run_scripts(con, Path("sql/estimates"))
