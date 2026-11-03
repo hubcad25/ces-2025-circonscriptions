@@ -39,3 +39,10 @@ def test_shares_sum_to_one(con):
         FROM (SELECT sum(share_of_fed13) AS total FROM analytics.fed_crosswalk GROUP BY fed13)
     """).fetchone()[0]
     assert max_error < 1e-9
+
+
+def test_pairs_stay_within_a_province(con):
+    crossing = con.execute("""
+        SELECT count(*) FROM analytics.fed_crosswalk WHERE fed13 // 1000 <> fed23 // 1000
+    """).fetchone()[0]
+    assert crossing == 0

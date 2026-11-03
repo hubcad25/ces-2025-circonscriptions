@@ -108,18 +108,42 @@ def category_order(categories: pd.Series) -> list[str]:
     return categories.value_counts().index.tolist()
 
 
+def allowed_categories(
+    database: Path, question: str, ridings: list[int], categories: list[str]
+) -> np.ndarray:
+    with duckdb.connect(database, read_only=True) as con:
+        exclusions = con.execute(
+            "SELECT category, province_code FROM analytics.mrp_exclusions WHERE question = ?",
+            [question],
+        ).fetchall()
+    codes = provinces(ridings)
+    # Axes: province, category.
+    allowed = np.ones((len(codes), len(categories)), dtype=bool)
+    for category, province_code in exclusions:
+        allowed[codes.index(province_code), categories.index(category)] = False
+    if not allowed[:, 0].all():
+        raise ValueError("The reference category cannot be excluded from a province")
+    return allowed
+
+
 def category_logits(
-    intercept: jnp.ndarray, effects: dict[str, jnp.ndarray], codes: dict[str, np.ndarray]
+    intercept: jnp.ndarray,
+    effects: dict[str, jnp.ndarray],
+    codes: dict[str, np.ndarray],
+    allowed: np.ndarray,
 ) -> jnp.ndarray:
     logits = intercept + sum(effect[codes[group]] for group, effect in effects.items())
     reference = jnp.zeros((logits.shape[0], 1))
-    return jnp.concatenate([reference, logits], axis=1)
+    logits = jnp.concatenate([reference, logits], axis=1)
+    # An excluded category gets a probability of exactly zero after the softmax.
+    return jnp.where(allowed[codes["province"]], logits, -jnp.inf)
 
 
 def model(
     codes: dict[str, np.ndarray],
     group_sizes: dict[str, int],
     predictors: np.ndarray,
+    allowed: np.ndarray,
     n_categories: int,
     outcome: np.ndarray | None = None,
 ) -> None:
@@ -137,7 +161,7 @@ def model(
     # pulled toward similar ridings rather than toward the national mean.
     beta = numpyro.sample("beta_fed13", dist.Normal(0, 1).expand([predictors.shape[1], n_effects]))
     effects["fed13"] = effects["fed13"] + predictors @ beta
-    logits = category_logits(intercept, effects, codes)
+    logits = category_logits(intercept, effects, codes, allowed)
     with numpyro.plate("respondents", logits.shape[0]):
         numpyro.sample("outcome", dist.Categorical(logits=logits), obs=outcome)
 
@@ -146,6 +170,7 @@ def fit(
     codes: dict[str, np.ndarray],
     group_sizes: dict[str, int],
     predictors: np.ndarray,
+    allowed: np.ndarray,
     n_categories: int,
     outcome: np.ndarray,
 ) -> MCMC:
@@ -157,7 +182,9 @@ def fit(
         chain_method="parallel",
         progress_bar=True,
     )
-    mcmc.run(jax.random.PRNGKey(SEED), codes, group_sizes, predictors, n_categories, outcome)
+    mcmc.run(
+        jax.random.PRNGKey(SEED), codes, group_sizes, predictors, allowed, n_categories, outcome
+    )
     return mcmc
 
 
@@ -171,6 +198,7 @@ def predict_probabilities(
     samples: dict[str, jnp.ndarray],
     group_sizes: dict[str, int],
     predictors: np.ndarray,
+    allowed: np.ndarray,
     codes: dict[str, np.ndarray],
     weights: np.ndarray,
 ) -> np.ndarray:
@@ -183,7 +211,7 @@ def predict_probabilities(
             for group in group_sizes
         }
         effects["fed13"] = effects["fed13"] + predictors @ samples["beta_fed13"][draw]
-        logits = category_logits(samples["intercept"][draw], effects, codes)
+        logits = category_logits(samples["intercept"][draw], effects, codes, allowed)
         by_past_vote = jax.nn.softmax(logits, axis=1).reshape(*weights.shape, -1)
         # Past vote only corrects the sample; it is averaged out with the census weights so
         # that the draws keep one row per demographic cell.
@@ -241,10 +269,19 @@ def fit_question(database: Path, question: str) -> None:
     categories = category_order(survey["category"])
     sizes = effect_sizes(ridings)
     predictors = load_predictors(database, ridings)
+    allowed = allowed_categories(database, question, ridings, categories)
     outcome = pd.Categorical(survey["category"], categories=categories).codes
-    mcmc = fit(encode(survey, ridings), sizes, predictors, len(categories), outcome)
+    survey_codes = encode(survey, ridings)
+    if not allowed[survey_codes["province"], outcome].all():
+        raise ValueError("Some respondents chose a category excluded from their province")
+    mcmc = fit(survey_codes, sizes, predictors, allowed, len(categories), outcome)
     probabilities = predict_probabilities(
-        mcmc.get_samples(), sizes, predictors, encode(cells, ridings), past_vote_weights(cells)
+        mcmc.get_samples(),
+        sizes,
+        predictors,
+        allowed,
+        encode(cells, ridings),
+        past_vote_weights(cells),
     )
     demographic_cells = cells.iloc[:: len(PAST_VOTES)]
     save_draws(database, draws_frame(question, demographic_cells, categories, probabilities))

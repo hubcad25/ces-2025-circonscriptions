@@ -24,8 +24,10 @@ block_ridings AS (
     FROM block_population AS bp
     INNER JOIN staging.ridings_2013 AS r13
         ON ST_Within(bp.geom, r13.geom)
+    -- The 2013 and 2023 boundary files do not line up exactly at provincial borders, which
+    -- would put a few border blocks in a riding of another province.
     INNER JOIN staging.ridings_2023 AS r23
-        ON ST_Within(bp.geom, r23.geom)
+        ON ST_Within(bp.geom, r23.geom) AND r13.fed13 // 1000 = r23.fed23 // 1000
 ),
 
 pairs AS (
