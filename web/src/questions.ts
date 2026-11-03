@@ -1,5 +1,8 @@
 import { PARTIES } from "./parties";
 
+// Not a survey question: the official 2025 vote share, shown for comparison with the estimates.
+export const OFFICIAL_RESULTS = "official_results";
+
 export type Category = { code: string; label: string; color: string };
 
 export type Question = { code: string; label: string; categories: Category[] };
@@ -47,4 +50,5 @@ export const QUESTIONS: Question[] = [
   },
   { code: "vote_post", label: "Reported vote (post-election wave)", categories: VOTE_CATEGORIES },
   { code: "vote_pre", label: "Vote intention (pre-election wave)", categories: VOTE_CATEGORIES },
+  { code: OFFICIAL_RESULTS, label: "Official results 2025", categories: VOTE_CATEGORIES },
 ];

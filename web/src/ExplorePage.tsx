@@ -3,7 +3,8 @@ import { type CSSProperties, useEffect, useState } from "react";
 import EstimateTable, { type Estimate } from "./EstimateTable";
 import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
-import { QUESTIONS } from "./questions";
+import { OFFICIAL_RESULTS, QUESTIONS } from "./questions";
+import resultsQuery from "./results.sql?raw";
 import RidingMap from "./RidingMap";
 
 async function loadEstimates(
@@ -11,8 +12,11 @@ async function loadEstimates(
   question: string,
   category: string,
 ): Promise<Estimate[]> {
-  const statement = await con.prepare(estimatesQuery);
-  const result = await statement.query(question, category);
+  const isOfficial = question === OFFICIAL_RESULTS;
+  const statement = await con.prepare(isOfficial ? resultsQuery : estimatesQuery);
+  const result = isOfficial
+    ? await statement.query(category)
+    : await statement.query(question, category);
   await statement.close();
   return result.toArray().map((row) => row.toJSON() as Estimate);
 }
@@ -77,7 +81,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
       ) : view === "map" ? (
         <RidingMap ridings={estimates} color={category.color} />
       ) : (
-        <EstimateTable estimates={estimates} />
+        <EstimateTable estimates={estimates} isOfficial={question.code === OFFICIAL_RESULTS} />
       )}
     </div>
   );
