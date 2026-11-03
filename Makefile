@@ -10,6 +10,7 @@ extract:
 
 build:
 	uv run python -m pipeline.load
+	uv run python -m pipeline.ipf
 
 TABLE ?= staging.candidates
 QUERY = uv run python -c "import duckdb, sys; duckdb.connect('data/ces.duckdb', read_only=True).sql(sys.argv[1]).show(max_rows=50)"
