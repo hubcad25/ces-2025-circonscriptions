@@ -1,16 +1,10 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { openDatabase } from "./duckdb";
+import { PARTIES } from "./parties";
+import RidingPage from "./RidingPage";
 import RidingTable, { type Riding } from "./RidingTable";
 import ridingsQuery from "./ridings.sql?raw";
-
-const PARTIES: { code: string; color: string }[] = [
-  { code: "LPC", color: "#d71920" },
-  { code: "CPC", color: "#1a4782" },
-  { code: "NDP", color: "#e8590c" },
-  { code: "BQ", color: "#0f8bab" },
-  { code: "OTH", color: "#6b7178" },
-];
 
 // West to east, then the territories, as in most Canadian tables.
 const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "YT", "NT", "NU"];
@@ -32,10 +26,18 @@ export default function App() {
   const [province, setProvince] = useState("");
   const [search, setSearch] = useState("");
   const searchInput = useRef<HTMLInputElement>(null);
+  const [hash, setHash] = useState(window.location.hash);
   const [allRidings, setRidings] = useState<Riding[]>([]);
 
   useEffect(() => {
     openDatabase().then(setCon);
+  }, []);
+
+  // Pages are addressed by the URL hash (#/riding/24059), which GitHub Pages serves as is.
+  useEffect(() => {
+    const onHashChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   // "/" jumps to the search box, as on GitHub; it is ignored while typing in a field.
@@ -54,6 +56,15 @@ export default function App() {
   useEffect(() => {
     if (con) loadRidings(con, party.code).then(setRidings);
   }, [con, party]);
+
+  const ridingMatch = hash.match(/^#\/riding\/(\d+)$/);
+  if (con && ridingMatch) {
+    return (
+      <main>
+        <RidingPage con={con} fed23={Number(ridingMatch[1])} />
+      </main>
+    );
+  }
 
   const ridings = allRidings.filter(
     (riding) =>

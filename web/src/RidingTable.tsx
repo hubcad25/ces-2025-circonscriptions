@@ -73,7 +73,8 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
           {sorted.map((riding) => (
             <tr key={riding.fed23}>
               <td>
-                {riding.fed23_name} <span className="province">{riding.province}</span>
+                <a href={`#/riding/${riding.fed23}`}>{riding.fed23_name}</a>{" "}
+                <span className="province">{riding.province}</span>
               </td>
               <td>
                 <div className="estimate">
