@@ -12,6 +12,9 @@ build:
 	uv run python -m pipeline.load
 	uv run python -m pipeline.ipf
 
+mrp:
+	uv run python -m pipeline.mrp
+
 TABLE ?= staging.candidates
 QUERY = uv run python -c "import duckdb, sys; duckdb.connect('data/ces.duckdb', read_only=True).sql(sys.argv[1]).show(max_rows=50)"
 
@@ -31,4 +34,4 @@ lint:
 test:
 	uv run pytest
 
-.PHONY: install extract build tables show ui lint test
+.PHONY: install extract build mrp tables show ui lint test

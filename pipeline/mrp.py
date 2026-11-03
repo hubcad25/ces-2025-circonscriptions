@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import duckdb
@@ -10,6 +11,7 @@ import pandas as pd
 from numpyro.infer import MCMC, NUTS
 
 from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES
+from pipeline.load import DATABASE
 
 N_CHAINS = 4
 N_WARMUP = 500
@@ -24,12 +26,23 @@ JOIN staging.respondents AS r USING (respondent_id)
 WHERE o.question = ? AND r.fed13 IS NOT NULL AND r.education IS NOT NULL
 """
 
+CELLS_QUERY = """
+SELECT DISTINCT fed13, age_group, gender, education, language
+FROM analytics.census_cells
+ORDER BY ALL
+"""
+
 
 def load_survey(database: Path, question: str) -> tuple[pd.DataFrame, list[int]]:
     with duckdb.connect(database, read_only=True) as con:
         survey = con.execute(SURVEY_QUERY, [question]).df()
         ridings = con.sql("SELECT DISTINCT fed13 FROM analytics.census_cells ORDER BY fed13")
         return survey, [row[0] for row in ridings.fetchall()]
+
+
+def load_cells(database: Path) -> pd.DataFrame:
+    with duckdb.connect(database, read_only=True) as con:
+        return con.sql(CELLS_QUERY).df()
 
 
 def group_levels(ridings: list[int]) -> dict[str, list]:
@@ -55,10 +68,20 @@ def encode(frame: pd.DataFrame, ridings: list[int]) -> dict[str, np.ndarray]:
     return codes
 
 
-def riding_provinces(ridings: list[int]) -> np.ndarray:
+def effect_sizes(ridings: list[int]) -> dict[str, int]:
+    sizes = {group: len(values) for group, values in group_levels(ridings).items()}
+    sizes["province"] = len(provinces(ridings))
+    return sizes
+
+
+def provinces(ridings: list[int]) -> list[int]:
     # The first two digits of a riding code are the province code.
-    provinces = sorted({fed13 // 1000 for fed13 in ridings})
-    return np.array([provinces.index(fed13 // 1000) for fed13 in ridings])
+    return sorted({fed13 // 1000 for fed13 in ridings})
+
+
+def riding_provinces(ridings: list[int]) -> np.ndarray:
+    codes = provinces(ridings)
+    return np.array([codes.index(fed13 // 1000) for fed13 in ridings])
 
 
 def category_order(categories: pd.Series) -> list[str]:
@@ -108,7 +131,7 @@ def fit(
         num_samples=N_SAMPLES,
         num_chains=N_CHAINS,
         chain_method="sequential",
-        progress_bar=False,
+        progress_bar=True,
     )
     mcmc.run(jax.random.PRNGKey(SEED), codes, group_sizes, n_categories, outcome)
     return mcmc
@@ -129,3 +152,61 @@ def predict_probabilities(
         probabilities.append(jax.nn.softmax(logits, axis=1))
     # Axes: draw, row of codes, category.
     return np.stack(probabilities)
+
+
+def draws_frame(
+    question: str, cells: pd.DataFrame, categories: list[str], probabilities: np.ndarray
+) -> pd.DataFrame:
+    n_draws, n_cells, n_categories = probabilities.shape
+    draw = np.repeat(np.arange(n_draws), n_cells * n_categories)
+    cell = np.tile(np.repeat(np.arange(n_cells), n_categories), n_draws)
+    return pd.DataFrame(
+        {
+            "question": question,
+            "draw": draw,
+            "fed13": cells["fed13"].to_numpy()[cell],
+            "age_group": cells["age_group"].to_numpy()[cell],
+            "gender": cells["gender"].to_numpy()[cell],
+            "education": cells["education"].to_numpy()[cell],
+            "language": cells["language"].to_numpy()[cell],
+            "category": np.tile(categories, n_draws * n_cells),
+            "probability": probabilities.reshape(-1),
+        }
+    )
+
+
+def save_draws(database: Path, draws: pd.DataFrame) -> None:
+    question = draws["question"].iloc[0]
+    with duckdb.connect(database) as con:
+        con.register("draws", draws)
+        con.execute("CREATE SCHEMA IF NOT EXISTS analytics")
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS analytics.mrp_draws (
+                question VARCHAR,
+                draw INTEGER,
+                fed13 INTEGER,
+                age_group VARCHAR,
+                gender VARCHAR,
+                education VARCHAR,
+                language VARCHAR,
+                category VARCHAR,
+                probability DOUBLE
+            )
+        """)
+        con.execute("DELETE FROM analytics.mrp_draws WHERE question = ?", [question])
+        con.execute("INSERT INTO analytics.mrp_draws SELECT * FROM draws")
+
+
+def fit_question(database: Path, question: str) -> None:
+    survey, ridings = load_survey(database, question)
+    cells = load_cells(database)
+    categories = category_order(survey["category"])
+    sizes = effect_sizes(ridings)
+    outcome = pd.Categorical(survey["category"], categories=categories).codes
+    mcmc = fit(encode(survey, ridings), sizes, len(categories), outcome)
+    probabilities = predict_probabilities(mcmc.get_samples(), sizes, encode(cells, ridings))
+    save_draws(database, draws_frame(question, cells, categories, probabilities))
+
+
+if __name__ == "__main__":
+    fit_question(DATABASE, sys.argv[1] if len(sys.argv) > 1 else "vote_post")
