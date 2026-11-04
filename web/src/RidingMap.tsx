@@ -67,9 +67,12 @@ type Scale = { low: number; high: number; stops: Stops };
 // recede and the ones that differ stand out.
 const COMPARISON_MIDDLE = "#3d4248";
 
+// The middle fifth of the scale stays grey, so that small gaps read as close to the reference
+// on the map and in the legend, rather than as faint blue or orange.
 const COMPARISON_STOPS: Stops = [
   [0, LOW],
-  [0.5, COMPARISON_MIDDLE],
+  [0.4, COMPARISON_MIDDLE],
+  [0.6, COMPARISON_MIDDLE],
   [1, HIGH],
 ];
 
