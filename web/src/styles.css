@@ -576,3 +576,18 @@ main:has(.map-wrap) {
 .riding-search button:hover {
   background: var(--border);
 }
+
+.similar {
+  margin-top: 2rem;
+}
+
+.similar details {
+  margin-bottom: 1rem;
+}
+
+.similar .weight {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
