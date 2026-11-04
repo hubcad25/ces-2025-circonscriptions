@@ -313,9 +313,11 @@ main:has(.map-wrap) {
 }
 
 /* Room above the line for the Canada marker, below it for the answer labels. */
+/* Side padding leaves room for the end answer labels, centered on the ends of the line. */
 .scale-position {
-  max-width: 520px;
-  padding: 28px 40px 0;
+  width: 520px;
+  max-width: 100%;
+  padding: 28px 56px 0;
 }
 
 .scale-band {
@@ -329,8 +331,16 @@ main:has(.map-wrap) {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  margin: 48px -40px 0;
-  white-space: nowrap;
+  margin: 48px -56px 0;
+}
+
+/* Long ends wrap within their half instead of pushing the page wider. */
+.scale-ends span {
+  max-width: 50%;
+}
+
+.scale-ends span:last-child {
+  text-align: right;
 }
 
 .scale-line {
