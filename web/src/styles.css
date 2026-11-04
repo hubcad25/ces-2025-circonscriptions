@@ -248,6 +248,77 @@ td {
   stroke-width: 1.5;
 }
 
+.riding-chart {
+  display: block;
+}
+
+.riding-chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.riding-chart .range {
+  fill: var(--party);
+  opacity: 0.3;
+}
+
+.riding-chart .mean {
+  fill: var(--party);
+}
+
+.riding-chart .actual {
+  stroke: var(--text);
+  stroke-width: 3;
+}
+
+.riding-chart .provincial {
+  fill: var(--text);
+}
+
+.riding-chart .track {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.riding-chart .row-label {
+  fill: var(--muted);
+  font-size: 13px;
+}
+
+.riding-chart .maple-leaf {
+  fill: #d52b1e;
+}
+
+.riding-chart text {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.riding-chart .label-mean {
+  fill: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.riding-chart-axis {
+  display: block;
+  margin-top: 4px;
+}
+
+.riding-chart-axis text {
+  fill: var(--muted);
+  font-size: 13px;
+}
+
+.riding-chart .label-reference {
+  fill: var(--text);
+}
+
+.riding-chart .label-bound {
+  fill: var(--muted);
+}
+
 .national-value {
   color: var(--muted);
 }
@@ -269,9 +340,10 @@ main:has(.map-wrap) {
 }
 
 .map {
-  /* Most of the window, even if the page scrolls a little: the map is the main view. */
-  height: 85vh;
-  min-height: 560px;
+  /* The shape of the starting view (Canada up to the top of Quebec, in Web Mercator), so that
+     the map shows no extra Arctic above it. */
+  aspect-ratio: 2.5;
+  min-height: 360px;
   border: 1px solid var(--border);
 }
 
@@ -450,4 +522,57 @@ main:has(.map-wrap) {
   margin-top: 24px;
   color: var(--muted);
   font-size: 12px;
+}
+
+/* "All ridings" on the left, the search box on the right. */
+.riding-nav {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.riding-search {
+  position: relative;
+  width: 320px;
+  max-width: 100%;
+}
+
+.riding-search input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+/* The matches float over the page, under the search box. */
+.riding-search ul {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  list-style: none;
+}
+
+.riding-search button {
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.riding-search button[aria-selected="true"],
+.riding-search button:hover {
+  background: var(--border);
 }

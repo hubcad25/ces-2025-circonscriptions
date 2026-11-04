@@ -16,7 +16,7 @@ maplibregl.setWorkerUrl(workerUrl);
 // handful of ridings.
 const BOUNDS: maplibregl.LngLatBoundsLike = [
   [-141, 41.6],
-  [-52.6, 63],
+  [-52.6, 62.6],
 ];
 
 const BACKGROUND = "#15171a";

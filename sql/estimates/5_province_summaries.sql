@@ -1,8 +1,9 @@
 CREATE SCHEMA IF NOT EXISTS analytics;
 
 -- Provincial share per question and category, computed like analytics.national_summaries but
--- within each province: the map compares ridings with their province when one is chosen. The
--- province is the first two digits of the riding code; 2013 ridings never cross a province.
+-- within each province, grouped answers included: the map compares ridings with their province
+-- when one is chosen, and the riding page shows it next to the riding. The province is the
+-- first two digits of the riding code; 2013 ridings never cross a province.
 CREATE OR REPLACE TABLE analytics.province_summaries AS
 WITH demographic_cells AS (
     SELECT fed13, age_group, gender, education, language, sum(n) AS n
@@ -36,8 +37,23 @@ mean_draws AS (
     GROUP BY p.question, p.province_code, p.draw
 ),
 
+grouped_draws AS (
+    SELECT
+        p.question,
+        p.province_code,
+        p.draw,
+        'grouped_' || s.side AS category,
+        sum(p.estimate) AS estimate
+    FROM province_draws AS p
+    INNER JOIN analytics.mrp_scales AS s
+        USING (question, category)
+    GROUP BY p.question, p.province_code, p.draw, s.side
+),
+
 all_draws AS (
     SELECT * FROM province_draws
+    UNION ALL
+    SELECT * FROM grouped_draws
     UNION ALL
     SELECT * FROM mean_draws
 )

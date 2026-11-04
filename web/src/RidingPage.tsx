@@ -1,19 +1,22 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useState } from "react";
-import IntervalBar, { IntervalAxis } from "./IntervalBar";
-import { type Question, QUESTIONS } from "./questions";
+import RidingChart, { RidingChartAxis } from "./RidingChart";
+import { type Category, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import ridingQuery from "./riding.sql?raw";
+import RidingSearch from "./RidingSearch";
 
 type Estimate = {
   question: string;
   category: string;
   fed23_name: string;
+  province: string;
   estimate_mean: number;
   estimate_low: number;
   estimate_high: number;
   actual_share: number | null;
   national_share: number;
+  provincial_share: number | null;
 };
 
 const percent = (share: number) => (100 * share).toFixed(1);
@@ -25,53 +28,46 @@ async function loadEstimates(con: AsyncDuckDBConnection, fed23: number): Promise
   return result.toArray().map((row) => row.toJSON() as Estimate);
 }
 
-type TableProps = { question: Question; estimates: Estimate[] };
+type TableProps = { categories: Category[]; estimates: Estimate[] };
 
-function QuestionTable({ question, estimates }: TableProps) {
+// Every estimate is written on the chart; the table only adds the official result.
+function QuestionTable({ categories, estimates }: TableProps) {
   const hasResults = estimates.some((estimate) => estimate.actual_share !== null);
   return (
     <table>
       <thead>
         <tr>
           <th>Answer</th>
-          <th className="center">MRP %</th>
-          <th className="number">Canada %</th>
-          {hasResults && <th className="number">Result %</th>}
           <th>
-            90% interval{hasResults && " and result"} (%)
-            <IntervalAxis />
+            Riding estimate and 90% interval (%)
+            <RidingChartAxis />
           </th>
+          {hasResults && <th className="number">Result %</th>}
         </tr>
       </thead>
       <tbody>
-        {question.categories.map((category) => {
+        {categories.map((category) => {
           const estimate = estimates.find((row) => row.category === category.code);
           if (!estimate) return null;
           return (
             <tr key={category.code} style={{ "--party": category.color } as CSSProperties}>
               <td>{category.label}</td>
               <td>
-                <div className="estimate">
-                  <span className="bound">{percent(estimate.estimate_low)}</span>
-                  <span>{percent(estimate.estimate_mean)}</span>
-                  <span className="bound">{percent(estimate.estimate_high)}</span>
-                </div>
-              </td>
-              <td className="number national-value">{percent(estimate.national_share)}</td>
-              {hasResults && (
-                <td className="number">
-                  {estimate.actual_share === null ? "no candidate" : percent(estimate.actual_share)}
-                </td>
-              )}
-              <td>
-                <IntervalBar
+                <RidingChart
                   low={estimate.estimate_low}
                   mean={estimate.estimate_mean}
                   high={estimate.estimate_high}
                   actual={estimate.actual_share}
                   national={estimate.national_share}
+                  provincial={estimate.provincial_share}
+                  province={estimate.province}
                 />
               </td>
+              {hasResults && (
+                <td className="number">
+                  {estimate.actual_share === null ? "no candidate" : percent(estimate.actual_share)}
+                </td>
+              )}
             </tr>
           );
         })}
@@ -85,6 +81,8 @@ type Props = { con: AsyncDuckDBConnection; fed23: number };
 export default function RidingPage({ con, fed23 }: Props) {
   const [estimates, setEstimates] = useState<Estimate[] | null>(null);
   const [question, setQuestion] = useState(QUESTIONS[0]);
+  // Grouped answers are easier to read; questions without groups ignore this choice.
+  const [isGrouped, setGrouped] = useState(true);
 
   useEffect(() => {
     loadEstimates(con, fed23).then(setEstimates);
@@ -95,22 +93,40 @@ export default function RidingPage({ con, fed23 }: Props) {
 
   return (
     <>
-      <a className="back" href="#/">
-        ← All ridings
-      </a>
+      <div className="riding-nav">
+        <a className="back" href="#/">
+          ← All ridings
+        </a>
+        <RidingSearch con={con} />
+      </div>
       <h1>{estimates[0].fed23_name}</h1>
       <p className="subtitle">Riding {fed23}, 2023 boundaries.</p>
       <div className="controls">
         <QuestionSelect value={question} onChange={setQuestion} />
+        {question.groups && (
+          <>
+            <span className="spacer" />
+            {[true, false].map((option) => (
+              <button
+                key={String(option)}
+                className="wave"
+                aria-pressed={option === isGrouped}
+                onClick={() => setGrouped(option)}
+              >
+                {option ? "Grouped" : "Detailed"}
+              </button>
+            ))}
+          </>
+        )}
       </div>
       <QuestionTable
-        question={question}
+        categories={isGrouped && question.groups ? question.groups : question.categories}
         estimates={estimates.filter((estimate) => estimate.question === question.code)}
       />
-      <p className="note">
-        Bar: 90% interval of the riding estimate; dot: riding estimate; diamond: Canada; line:
-        official result.
-      </p>
+      <ul className="legend-caption">
+        <li>Riding row: the riding's estimate (dot) and its 90% interval (bar), with the official result as a white line for the vote.</li>
+        <li>Rows below: the same answer for {estimates[0].province} as a whole (white dot) and for Canada (red maple leaf).</li>
+      </ul>
     </>
   );
 }

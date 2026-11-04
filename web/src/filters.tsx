@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 // West to east, then the territories, as in most Canadian tables.
 const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "YT", "NT", "NU"];
 
 // Lets "montreal" match "Montréal" and "quebec" match "Québec".
-const normalize = (text: string) =>
+export const normalize = (text: string) =>
   text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
 export type Filter = { province: string; search: string };
@@ -18,23 +18,26 @@ export function matches(riding: Located, { province, search }: Filter): boolean 
   );
 }
 
-type Props = { filter: Filter; onChange: (filter: Filter) => void };
-
-export default function FilterControls({ filter, onChange }: Props) {
-  const searchInput = useRef<HTMLInputElement>(null);
-
-  // "/" jumps to the search box, as on GitHub; it is ignored while typing in a field.
+// "/" jumps to the search box, as on GitHub; it is ignored while typing in a field.
+export function useSlashFocus(input: RefObject<HTMLInputElement | null>) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const isTyping = event.target instanceof HTMLInputElement;
       if (event.key === "/" && !isTyping) {
         event.preventDefault();
-        searchInput.current?.focus();
+        input.current?.focus();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [input]);
+}
+
+type Props = { filter: Filter; onChange: (filter: Filter) => void };
+
+export default function FilterControls({ filter, onChange }: Props) {
+  const searchInput = useRef<HTMLInputElement>(null);
+  useSlashFocus(searchInput);
 
   return (
     <>
