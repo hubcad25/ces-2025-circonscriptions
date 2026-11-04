@@ -242,9 +242,15 @@ td {
   gap: 12px;
 }
 
+/* The map uses the whole width of the window, unlike the tables. */
+main:has(.map-wrap) {
+  max-width: none;
+}
+
 .map {
   flex: 1;
-  height: 560px;
+  height: calc(100vh - 240px);
+  min-height: 420px;
   border: 1px solid var(--border);
 }
 
@@ -277,6 +283,12 @@ td {
 .legend-bar {
   width: 10px;
   height: 200px;
+}
+
+.legend-note {
+  max-width: 120px;
+  font-size: 11px;
+  text-align: center;
 }
 
 .layout {

@@ -5,14 +5,22 @@ export const OFFICIAL_RESULTS = "official_results";
 
 export type Category = { code: string; label: string; color: string };
 
-export type Question = { code: string; label: string; categories: Category[] };
+// Ordinal questions can also be read as their mean position on the scale (answers ranked from
+// 1) or, with groups, as grouped answers; codes come from analytics.fed_summaries.
+export type Question = {
+  code: string;
+  label: string;
+  categories: Category[];
+  isOrdinal?: boolean;
+  groups?: Category[];
+};
 
 const VOTE_CATEGORIES = PARTIES.map((party) => ({ ...party, label: party.code }));
 
 // Ordered answers use blue for the low end, grey for the middle and orange for the high end.
-const LOW = "#2e90fa";
+export const LOW = "#2e90fa";
 const MIDDLE = "#98a2b3";
-const HIGH = "#f79009";
+export const HIGH = "#f79009";
 
 const AGREEMENT: Category[] = [
   { code: "strongly_disagree", label: "Strongly disagree", color: LOW },
@@ -33,6 +41,7 @@ export const QUESTIONS: Question[] = [
       { code: "same", label: "Same", color: MIDDLE },
       { code: "more", label: "More", color: HIGH },
     ],
+    isOrdinal: true,
   },
   {
     code: "spend_defence",
@@ -42,11 +51,18 @@ export const QUESTIONS: Question[] = [
       { code: "same", label: "Same", color: MIDDLE },
       { code: "more", label: "More", color: HIGH },
     ],
+    isOrdinal: true,
   },
   {
     code: "bilingualism",
     label: "We have gone too far in pushing bilingualism in Canada",
     categories: AGREEMENT,
+    groups: [
+      { code: "grouped_low", label: "Disagree", color: LOW },
+      { code: "grouped_middle", label: "Neither", color: MIDDLE },
+      { code: "grouped_high", label: "Agree", color: HIGH },
+    ],
+    isOrdinal: true,
   },
   { code: "vote_post", label: "Reported vote (post-election wave)", categories: VOTE_CATEGORIES },
   { code: "vote_pre", label: "Vote intention (pre-election wave)", categories: VOTE_CATEGORIES },

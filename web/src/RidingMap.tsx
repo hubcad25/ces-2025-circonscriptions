@@ -2,6 +2,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { FeatureCollection, MultiPolygon } from "geojson";
+import { HIGH, LOW } from "./questions";
 import { useEffect, useRef } from "react";
 
 // MapLibre fetches files from a web worker, where only absolute URLs resolve.
@@ -39,33 +40,113 @@ const STYLE: maplibregl.StyleSpecification = {
 
 type Located = { fed23: number; estimate_mean: number };
 
-type Props = { ridings: Located[]; color: string };
+// A comparison with Canada is set for mean positions on an answer scale: the national mean
+// and the answer labels, ranked from 1.
+type Comparison = { national: number; scaleLabels: string[] };
 
-function shareRange(ridings: Located[]): [number, number] {
-  const shares = ridings.map((riding) => riding.estimate_mean);
-  return [Math.min(...shares), Math.max(...shares)];
+type Props = { ridings: Located[]; color: string; comparison?: Comparison };
+
+// Color stops are [position, color], with positions from 0 (low) to 1 (high).
+type Stops = [number, string][];
+
+type Scale = { low: number; high: number; stops: Stops };
+
+// The middle is dark grey rather than white: on the dark background, ridings close to Canada
+// recede and the ones that differ stand out.
+const COMPARISON_MIDDLE = "#3d4248";
+
+const COMPARISON_STOPS: Stops = [
+  [0, LOW],
+  [0.5, COMPARISON_MIDDLE],
+  [1, HIGH],
+];
+
+// One extreme riding would otherwise push every other riding toward the middle color; the
+// ridings beyond this share of gaps take the end colors.
+const COMPARISON_PERCENTILE = 0.95;
+
+function percentile(values: number[], share: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.min(sorted.length - 1, Math.floor(share * sorted.length))];
 }
 
-// The scale runs from the party's lowest to highest riding, so that differences stand out
-// even for a party that is low everywhere. Ridings left out by the filters get no value.
-function showEstimates(map: maplibregl.Map, { ridings, color }: Props) {
-  const [low, high] = shareRange(ridings);
+// A share runs from the lowest to the highest riding, so that differences stand out even for
+// a category that is low everywhere. A comparison is centered on Canada: the middle color at
+// the national mean, blue below and orange above, the same width on both sides.
+function colorScale({ ridings, color, comparison }: Props): Scale {
+  const values = ridings.map((riding) => riding.estimate_mean);
+  if (!comparison) {
+    return {
+      low: Math.min(...values),
+      high: Math.max(...values),
+      stops: [
+        [0, LOW_COLOR],
+        [1, color],
+      ],
+    };
+  }
+  const gaps = values.map((value) => Math.abs(value - comparison.national));
+  const widest = percentile(gaps, COMPARISON_PERCENTILE);
+  return {
+    low: comparison.national - widest,
+    high: comparison.national + widest,
+    stops: COMPARISON_STOPS,
+  };
+}
+
+function gradient(stops: Stops): string {
+  const parts = stops.map(([position, stop]) => `${stop} ${100 * position}%`);
+  return `linear-gradient(to top, ${parts.join(", ")})`;
+}
+
+const signed = (value: number) =>
+  `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(2)}`;
+
+function formatValue(value: number, comparison?: Comparison): string {
+  if (!comparison) return `${(100 * value).toFixed(1)}%`;
+  return `${value.toFixed(2)} (${signed(value - comparison.national)} vs Canada)`;
+}
+
+const clamp = (value: number) => Math.min(1, Math.max(0, value));
+
+// Ridings left out by the filters get no value.
+function showEstimates(map: maplibregl.Map, props: Props) {
+  const { ridings, comparison } = props;
+  const { low, high, stops } = colorScale(props);
   map.removeFeatureState({ source: "ridings" });
   map.setPaintProperty("fill", "fill-color", [
     "case",
     ["==", ["feature-state", "scaled"], null],
     FILTERED_OUT_COLOR,
-    ["interpolate", ["linear"], ["feature-state", "scaled"], 0, LOW_COLOR, 1, color],
+    ["interpolate", ["linear"], ["feature-state", "scaled"], ...stops.flat()],
   ]);
   for (const riding of ridings) {
     map.setFeatureState(
       { source: "ridings", id: riding.fed23 },
       {
-        share: riding.estimate_mean,
-        scaled: high > low ? (riding.estimate_mean - low) / (high - low) : 1,
+        label: formatValue(riding.estimate_mean, comparison),
+        // Kept within [0, 1]: ridings beyond the capped scale take the end colors.
+        scaled: high > low ? clamp((riding.estimate_mean - low) / (high - low)) : 0.5,
       },
     );
   }
+}
+
+// The legend of a comparison reads from Canada outwards, and recalls what the scale means.
+type LegendProps = Comparison & { low: number; high: number };
+
+function ComparisonLegend({ national, scaleLabels, low, high }: LegendProps) {
+  return (
+    <div className="legend">
+      <span>{signed(high - national)} or more vs Canada</span>
+      <span className="legend-bar" style={{ background: gradient(COMPARISON_STOPS) }} />
+      <span>{signed(low - national)} or less vs Canada</span>
+      <span className="legend-note">Canada: {national.toFixed(2)}</span>
+      <span className="legend-note">
+        {scaleLabels.map((label, index) => `${index + 1} ${label}`).join(" · ")}
+      </span>
+    </div>
+  );
 }
 
 async function addLayers(map: maplibregl.Map) {
@@ -108,21 +189,22 @@ async function addLayers(map: maplibregl.Map) {
   });
 }
 
-export default function RidingMap({ ridings, color }: Props) {
+export default function RidingMap({ ridings, color, comparison }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const loaded = useRef(false);
   // The map loads after the first render; it then needs the latest filters, not the first ones.
-  const latest = useRef<Props>({ ridings, color });
-  latest.current = { ridings, color };
+  const latest = useRef<Props>({ ridings, color, comparison });
+  latest.current = { ridings, color, comparison };
 
   useEffect(() => {
     const instance = new maplibregl.Map({
       container: container.current!,
       style: STYLE,
       bounds: BOUNDS,
+      // Panning stops just south of Point Pelee (41.7°N), Canada's southernmost point.
       maxBounds: [
-        [-160, 35],
+        [-160, 41],
         [-35, 66],
       ],
       maxZoom: 11,
@@ -139,8 +221,7 @@ export default function RidingMap({ ridings, color }: Props) {
 
     instance.on("mousemove", "fill", (event) => {
       const feature = event.features![0];
-      const share = feature.state.share as number | undefined;
-      const value = share === undefined ? "filtered out" : `${(100 * share).toFixed(1)}%`;
+      const value = (feature.state.label as string | undefined) ?? "filtered out";
       instance.getCanvas().style.cursor = "pointer";
       popup
         .setLngLat(event.lngLat)
@@ -160,21 +241,25 @@ export default function RidingMap({ ridings, color }: Props) {
   }, []);
 
   useEffect(() => {
-    if (loaded.current) showEstimates(map.current!, { ridings, color });
-  }, [ridings, color]);
+    if (loaded.current) showEstimates(map.current!, { ridings, color, comparison });
+  }, [ridings, color, comparison]);
 
-  const [low, high] = shareRange(ridings);
+  const { low, high, stops } = colorScale({ ridings, color, comparison });
   return (
     <div className="map-wrap">
       <div className="map" ref={container} />
-      <div className="legend">
-        <span>{(100 * high).toFixed(0)}%</span>
-        <span
-          className="legend-bar"
-          style={{ background: `linear-gradient(to top, ${LOW_COLOR}, ${color})` }}
-        />
-        <span>{(100 * low).toFixed(0)}%</span>
-      </div>
+      {comparison ? (
+        <ComparisonLegend {...comparison} low={low} high={high} />
+      ) : (
+        <div className="legend">
+          <span>{formatValue(high)}</span>
+          <span
+            className="legend-bar"
+            style={{ background: gradient(stops) }}
+          />
+          <span>{formatValue(low)}</span>
+        </div>
+      )}
     </div>
   );
 }
