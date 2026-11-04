@@ -9,13 +9,14 @@ import RidingMap from "./RidingMap";
 
 type Display = "grouped" | "detailed" | "canada";
 
-const DISPLAY_LABELS: Record<Display, string> = {
+// The "canada" display is labelled with its reference, Canada or the chosen province.
+const DISPLAY_LABELS: Record<Exclude<Display, "canada">, string> = {
   grouped: "Grouped",
   detailed: "Detailed",
-  canada: "vs Canada",
 };
 
-// "vs Canada" compares each riding's mean answer with the national mean.
+// "vs Canada" compares each riding's mean answer with the national mean, or the provincial
+// mean when a province is chosen.
 function displays(question: Question): Display[] {
   if (!question.isOrdinal) return ["detailed"];
   return question.groups ? ["grouped", "canada", "detailed"] : ["canada", "detailed"];
@@ -73,18 +74,24 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
     choose(next, defaultDisplay(next));
   }
 
+  // Ridings are compared with their province when one is chosen, with Canada otherwise.
+  const referenceName = filter.province || "Canada";
+  const reference = filter.province
+    ? allEstimates.find((estimate) => estimate.province === filter.province)?.provincial
+    : allEstimates[0]?.national;
+
   // Memoized so that the map only redraws when the display or the data really change.
-  const national = allEstimates[0]?.national;
   const comparison = useMemo(
     () =>
-      display === "canada" && national != null
+      display === "canada" && reference != null
         ? {
-            national,
+            reference,
+            referenceName,
             scaleLabels: question.categories.map((option) => option.label),
             ends: question.ends!,
           }
         : undefined,
-    [display, question, national],
+    [display, question, reference, referenceName],
   );
 
   const estimates = allEstimates.filter((estimate) => matches(estimate, filter));
@@ -122,7 +129,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
               aria-pressed={option === display}
               onClick={() => choose(question, option)}
             >
-              {DISPLAY_LABELS[option]}
+              {option === "canada" ? `vs ${referenceName}` : DISPLAY_LABELS[option]}
             </button>
           ))}
         </div>

@@ -45,9 +45,14 @@ type Located = {
   estimate_high: number;
 };
 
-// A comparison with Canada is set for mean positions on an answer scale: the national mean
-// and the answer labels, ranked from 1.
-type Comparison = { national: number; scaleLabels: string[]; ends: [string, string] };
+// A comparison is set for mean positions on an answer scale: the mean of the reference (Canada,
+// or the chosen province), and the answer labels, ranked from 1.
+type Comparison = {
+  reference: number;
+  referenceName: string;
+  scaleLabels: string[];
+  ends: [string, string];
+};
 
 type Props = { ridings: Located[]; color: string; comparison?: Comparison };
 
@@ -58,7 +63,7 @@ type Stops = [number, string][];
 
 type Scale = { low: number; high: number; stops: Stops };
 
-// The middle is dark grey rather than white: on the dark background, ridings close to Canada
+// The middle is dark grey rather than white: on the dark background, ridings close to the reference
 // recede and the ones that differ stand out.
 const COMPARISON_MIDDLE = "#3d4248";
 
@@ -78,8 +83,8 @@ function percentile(values: number[], share: number): number {
 }
 
 // A share runs from the lowest to the highest riding, so that differences stand out even for
-// a category that is low everywhere. A comparison is centered on Canada: the middle color at
-// the national mean, blue below and orange above, the same width on both sides.
+// a category that is low everywhere. A comparison is centered on the reference: the middle
+// color at its mean, blue below and orange above, the same width on both sides.
 function colorScale({ ridings, color, comparison }: Props): Scale {
   const values = ridings.map((riding) => riding.estimate_mean);
   if (!comparison) {
@@ -92,11 +97,11 @@ function colorScale({ ridings, color, comparison }: Props): Scale {
       ],
     };
   }
-  const gaps = values.map((value) => Math.abs(value - comparison.national));
+  const gaps = values.map((value) => Math.abs(value - comparison.reference));
   const widest = percentile(gaps, COMPARISON_PERCENTILE);
   return {
-    low: comparison.national - widest,
-    high: comparison.national + widest,
+    low: comparison.reference - widest,
+    high: comparison.reference + widest,
     stops: COMPARISON_STOPS,
   };
 }
@@ -111,16 +116,17 @@ const signed = (value: number) =>
 
 function formatValue(value: number, comparison?: Comparison): string {
   if (!comparison) return `${(100 * value).toFixed(1)}%`;
-  return `${value.toFixed(2)} (${signed(value - comparison.national)} vs Canada)`;
+  const { reference, referenceName } = comparison;
+  return `${value.toFixed(2)} (${signed(value - reference)} vs ${referenceName})`;
 }
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
-// A riding whose interval contains the national mean is not shown as different from Canada:
-// it keeps the middle color.
+// A riding whose interval contains the reference mean is not shown as different from it: it
+// keeps the middle color.
 function scaledValue(riding: Located, { low, high }: Scale, comparison?: Comparison): number {
-  const national = comparison?.national;
-  if (national !== undefined && riding.estimate_low <= national && national <= riding.estimate_high)
+  const reference = comparison?.reference;
+  if (reference !== undefined && riding.estimate_low <= reference && reference <= riding.estimate_high)
     return 0.5;
   // Kept within [0, 1]: ridings beyond the capped scale take the end colors.
   return high > low ? clamp((riding.estimate_mean - low) / (high - low)) : 0.5;
@@ -148,14 +154,14 @@ function showEstimates(map: maplibregl.Map, props: Props) {
   }
 }
 
-// The legend of a comparison reads from Canada outwards, and its caption explains the scale
+// The legend of a comparison reads from the reference outwards, and its caption explains the scale
 // with the question's own answers.
 type LegendProps = Comparison & { low: number; high: number };
 
-// Canada's average placed on the answer scale, so that 2.94 reads as "just below Agree", with
+// The reference's average placed on the answer scale, so that 2.94 reads as "just below Agree", with
 // the color band drawn around it at its true width on the scale.
 function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
-  const { national, scaleLabels, ends } = comparison;
+  const { reference, referenceName, scaleLabels, ends } = comparison;
   const position = (rank: number) => (100 * (rank - 1)) / (scaleLabels.length - 1);
   const band = {
     left: `${position(low)}%`,
@@ -173,16 +179,16 @@ function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
             {label}
           </span>
         ))}
-        <span className="scale-marker" style={{ left: `${position(national)}%` }}>
-          Canada {national.toFixed(2)}
+        <span className="scale-marker" style={{ left: `${position(reference)}%` }}>
+          {referenceName} {reference.toFixed(2)}
         </span>
       </div>
       <div className="scale-ends">
         <span style={{ color: LOW }}>
-          ← {ends[0]} ({signed(low - national)} vs Canada)
+          ← {ends[0]} ({signed(low - reference)} vs {referenceName})
         </span>
         <span style={{ color: HIGH }}>
-          {ends[1]} ({signed(high - national)} vs Canada) →
+          {ends[1]} ({signed(high - reference)} vs {referenceName}) →
         </span>
       </div>
     </div>
@@ -202,13 +208,18 @@ function ShareLegend({ low, high, stops }: Scale) {
 }
 
 // Reading notes, shown under the map.
-function ComparisonNotes({ scaleLabels }: Comparison) {
+function ComparisonNotes({ referenceName, scaleLabels }: Comparison) {
   const top = scaleLabels[scaleLabels.length - 1];
   return (
     <ul className="legend-caption">
       <li>Each riding gets its average answer on the scale above.</li>
-      <li>+0.10 means a riding's average is 0.10 point above Canada's: it leans toward "{top}".</li>
-      <li>Grey: the riding cannot be told apart from Canada (its 90% interval includes Canada's average).</li>
+      <li>
+        +0.10 means a riding's average is 0.10 point above {referenceName}'s: it leans toward "{top}".
+      </li>
+      <li>
+        Grey: the riding cannot be told apart from {referenceName} (its 90% interval includes{" "}
+        {referenceName}'s average).
+      </li>
       <li>Colors stop growing at the ends of the bar, so that a few extreme ridings do not wash out the others.</li>
     </ul>
   );

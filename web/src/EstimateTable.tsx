@@ -9,6 +9,7 @@ export type Estimate = {
   estimate_low: number;
   estimate_high: number;
   national?: number | null;
+  provincial?: number | null;
 };
 
 type SortKey = "fed23_name" | "estimate_mean";

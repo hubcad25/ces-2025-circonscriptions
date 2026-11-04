@@ -1,5 +1,5 @@
 -- One row per 2023 riding for the chosen question and category: the MRP estimate, its widened
--- interval and the national estimate. Categories excluded from a riding (no candidate) have an
+-- interval, and the national and provincial estimates. Categories excluded from a riding (no candidate) have an
 -- estimate of exactly zero, which is what the filter drops.
 SELECT
     s.fed23,
@@ -14,8 +14,13 @@ SELECT
     s.estimate_mean,
     s.estimate_low,
     s.estimate_high,
-    n.estimate_mean AS national
+    n.estimate_mean AS national,
+    p.estimate_mean AS provincial
 FROM 'fed_summaries.parquet' AS s
 LEFT JOIN 'national_summaries.parquet' AS n
     USING (question, category)
+LEFT JOIN 'province_summaries.parquet' AS p
+    ON p.question = s.question
+    AND p.category = s.category
+    AND p.province_code = s.fed23 // 1000
 WHERE s.question = ? AND s.category = ? AND s.estimate_high <> 0
