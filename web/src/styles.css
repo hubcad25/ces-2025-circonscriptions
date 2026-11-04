@@ -269,8 +269,9 @@ main:has(.map-wrap) {
 
 .map {
   flex: 1;
-  height: calc(100vh - 240px);
-  min-height: 420px;
+  /* Most of the window, even if the page scrolls a little: the map is the main view. */
+  height: 85vh;
+  min-height: 560px;
   border: 1px solid var(--border);
 }
 
