@@ -193,6 +193,216 @@ french_threatened AS (
         CASE code WHEN 1 THEN 'yes' WHEN 2 THEN 'no' END AS category
     FROM staging.responses
     WHERE variable = 'pes25_langQC'
+),
+
+immigrants_jobs AS (
+    SELECT
+        'immigrants_jobs' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_immigjobs'
+),
+
+immigrants_crime AS (
+    SELECT
+        'immigrants_crime' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_nativism5'
+),
+
+immigrants_fit_in AS (
+    SELECT
+        'immigrants_fit_in' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_fitin'
+),
+
+reduce_inequality AS (
+    SELECT
+        'reduce_inequality' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_govt_act_ineq'
+),
+
+private_jobs AS (
+    SELECT
+        'private_jobs' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_privjobs'
+),
+
+welfare_dependency AS (
+    SELECT
+        'welfare_dependency' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_deserve2'
+),
+
+trade_jobs AS (
+    SELECT
+        'trade_jobs' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_trade'
+),
+
+spend_education AS (
+    SELECT
+        'spend_education' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'less' WHEN 2 THEN 'same' WHEN 3 THEN 'more' END AS category
+    FROM staging.responses
+    WHERE variable = 'cps25_spend_educ'
+),
+
+spend_immigrants AS (
+    SELECT
+        'spend_immigrants' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'less' WHEN 2 THEN 'same' WHEN 3 THEN 'more' END AS category
+    FROM staging.responses
+    WHERE variable = 'cps25_spend_imm_min'
+),
+
+equal_rights AS (
+    SELECT
+        'equal_rights' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_equalrights'
+),
+
+newer_lifestyles AS (
+    SELECT
+        'newer_lifestyles' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_newerlife'
+),
+
+family_values AS (
+    SELECT
+        'family_values' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_famvalues'
+),
+
+climate_change AS (
+    SELECT
+        'climate_change' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'yes' WHEN 2 THEN 'no' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_cc1'
+),
+
+politicians_lie AS (
+    SELECT
+        'politicians_lie' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_pollie'
+),
+
+strong_leader AS (
+    SELECT
+        'strong_leader' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_populism_6'
+),
+
+no_say AS (
+    SELECT
+        'no_say' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'somewhat_agree' WHEN 4 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'cps25_govt_say'
+),
+
+people_trusted AS (
+    SELECT
+        'people_trusted' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'trusted' WHEN 2 THEN 'careful' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_trust'
+),
+
+province_treatment AS (
+    SELECT
+        'province_treatment' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'better' WHEN 2 THEN 'worse' WHEN 3 THEN 'same' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_prov_treatment'
+),
+
+economy_past_year AS (
+    SELECT
+        'economy_past_year' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'better' WHEN 2 THEN 'same' WHEN 3 THEN 'worse' END AS category
+    FROM staging.responses
+    WHERE variable = 'cps25_econ_retro'
 )
 
 SELECT * FROM vote_post WHERE category IS NOT NULL
@@ -227,4 +437,42 @@ SELECT * FROM democracy_satisfaction WHERE category IS NOT NULL
 UNION ALL
 SELECT * FROM politicians_trustworthy WHERE category IS NOT NULL
 UNION ALL
-SELECT * FROM french_threatened WHERE category IS NOT NULL;
+SELECT * FROM french_threatened WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM immigrants_jobs WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM immigrants_crime WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM immigrants_fit_in WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM reduce_inequality WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM private_jobs WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM welfare_dependency WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM trade_jobs WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM spend_education WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM spend_immigrants WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM equal_rights WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM newer_lifestyles WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM family_values WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM climate_change WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM politicians_lie WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM strong_leader WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM no_say WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM people_trusted WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM province_treatment WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM economy_past_year WHERE category IS NOT NULL;
