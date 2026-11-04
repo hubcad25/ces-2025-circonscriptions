@@ -8,8 +8,9 @@ import numpy as np
 import numpyro
 import numpyro.distributions as dist
 import pandas as pd
+from numpyro.diagnostics import summary
 from numpyro.distributions.transforms import OrderedTransform
-from numpyro.infer import MCMC, NUTS
+from numpyro.infer import MCMC, NUTS, init_to_median
 
 from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES, PAST_VOTES
 from pipeline.load import DATABASE, run_scripts
@@ -21,6 +22,8 @@ N_ITERATIONS = 500
 QUICK_ITERATIONS = 20
 N_DRAWS = 100
 SEED = 2025
+# Above this split R-hat, the chains disagree: one of them is likely stuck.
+MAX_R_HAT = 1.1
 
 # JAX sees a single CPU device by default; one device per chain lets the chains run in parallel.
 # This must run before JAX first uses the CPU.
@@ -218,7 +221,8 @@ def fit(
     n_iterations: int,
 ) -> MCMC:
     mcmc = MCMC(
-        NUTS(model),
+        # Starting every chain at the prior median avoids chains stuck from a bad random start.
+        NUTS(model, init_strategy=init_to_median),
         num_warmup=n_iterations,
         num_samples=n_iterations,
         num_chains=N_CHAINS,
@@ -236,6 +240,13 @@ def fit(
         outcome,
     )
     return mcmc
+
+
+def check_convergence(mcmc: MCMC) -> None:
+    diagnostics = summary(mcmc.get_samples(group_by_chain=True))
+    worst = max(float(np.nanmax(stats["r_hat"])) for stats in diagnostics.values())
+    if worst > MAX_R_HAT:
+        raise RuntimeError(f"Chains did not converge: max R-hat {worst:.2f} > {MAX_R_HAT}")
 
 
 def past_vote_weights(cells: pd.DataFrame) -> np.ndarray:
@@ -338,6 +349,8 @@ def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
     mcmc = fit(
         survey_codes, sizes, predictors, allowed, len(categories), is_ordinal, outcome, n_iterations
     )
+    if not is_quick:
+        check_convergence(mcmc)
     probabilities = predict_probabilities(
         mcmc.get_samples(),
         sizes,
