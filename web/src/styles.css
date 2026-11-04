@@ -54,6 +54,25 @@ a:hover {
   color: var(--muted);
 }
 
+.question {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+/* Question on the left, legend on the right, just above the map. */
+.map-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 32px;
+}
+
+.map-header .question {
+  max-width: 480px;
+  margin: 0;
+}
+
 .subtitle {
   margin: 0 0 24px;
   color: var(--muted);
@@ -239,12 +258,19 @@ td {
 
 .map-wrap {
   display: flex;
+  flex-direction: column;
   gap: 12px;
+}
+
+/* The map uses the whole width of the window, unlike the tables. */
+main:has(.map-wrap) {
+  max-width: none;
 }
 
 .map {
   flex: 1;
-  height: 560px;
+  height: calc(100vh - 240px);
+  min-height: 420px;
   border: 1px solid var(--border);
 }
 
@@ -265,18 +291,114 @@ td {
 }
 
 .legend {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  max-width: 720px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
+.legend-scale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-scale span {
+  white-space: nowrap;
+}
+
 .legend-bar {
+  flex: 0 1 280px;
+  height: 12px;
+}
+
+/* Room above the line for the Canada marker, below it for the answer labels. */
+/* Side padding leaves room for the end answer labels, centered on the ends of the line. */
+.scale-position {
+  width: 520px;
+  max-width: 100%;
+  padding: 28px 56px 0;
+}
+
+.scale-band {
+  position: absolute;
+  top: -4px;
+  height: 10px;
+}
+
+/* Below the answer labels, which take two lines. */
+.scale-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 64px -56px 0;
+}
+
+/* Long ends wrap within their half instead of pushing the page wider. */
+.scale-ends span {
+  max-width: 50%;
+}
+
+.scale-ends span:last-child {
+  text-align: right;
+}
+
+.scale-line {
+  position: relative;
+  height: 2px;
+  background: var(--border);
+}
+
+/* Narrow enough that five answers side by side never overlap: long ones wrap instead. */
+.scale-tick {
+  position: absolute;
+  top: 8px;
+  width: 84px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.scale-tick::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 1px;
+  height: 8px;
+  background: var(--muted);
+}
+
+.scale-marker {
+  position: absolute;
+  bottom: 6px;
+  transform: translateX(-50%);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.scale-marker::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
   width: 10px;
-  height: 200px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text);
+  transform: translateX(-50%);
+}
+
+.legend-caption {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  padding-left: 18px;
+  line-height: 1.5;
 }
 
 .layout {

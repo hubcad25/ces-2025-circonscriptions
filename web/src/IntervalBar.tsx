@@ -1,9 +1,23 @@
 const WIDTH = 160;
 const HEIGHT = 14;
-const TICKS = [0, 0.25, 0.5, 0.75, 1];
+const SHARE_TICKS = [0, 0.25, 0.5, 0.75, 1];
 
-// Every row uses the same 0 to 100% scale so that ridings can be compared at a glance.
-const x = (share: number) => share * WIDTH;
+// Every row uses the same scale so that ridings can be compared at a glance: 0 to 100% for a
+// share, or the answer ranks (1 to the number of answers) for a mean position on a scale.
+function axis(topRank?: number) {
+  if (topRank === undefined) {
+    return {
+      ticks: SHARE_TICKS,
+      x: (value: number) => value * WIDTH,
+      label: (tick: number) => 100 * tick,
+    };
+  }
+  return {
+    ticks: Array.from({ length: topRank }, (_, index) => index + 1),
+    x: (value: number) => ((value - 1) / (topRank - 1)) * WIDTH,
+    label: (tick: number) => tick,
+  };
+}
 
 // Questions without an official result (attitudes) have no actual line; the national share,
 // when given, is drawn as a small diamond.
@@ -13,12 +27,14 @@ type Props = {
   high: number;
   actual?: number | null;
   national?: number;
+  topRank?: number;
 };
 
-export default function IntervalBar({ low, mean, high, actual, national }: Props) {
+export default function IntervalBar({ low, mean, high, actual, national, topRank }: Props) {
+  const { ticks, x } = axis(topRank);
   return (
     <svg className="interval" width={WIDTH} height={HEIGHT} role="img">
-      {TICKS.map((tick) => (
+      {ticks.map((tick) => (
         <line key={tick} className="grid" x1={x(tick)} x2={x(tick)} y1={0} y2={HEIGHT} />
       ))}
       <rect className="range" x={x(low)} y={3} width={x(high) - x(low)} height={8} />
@@ -41,17 +57,18 @@ export default function IntervalBar({ low, mean, high, actual, national }: Props
 }
 
 // Placed in the column header, above the bars, with the same width and ticks.
-export function IntervalAxis() {
+export function IntervalAxis({ topRank }: { topRank?: number }) {
+  const { ticks, x, label } = axis(topRank);
   return (
     <svg className="interval-axis" width={WIDTH} height={12} role="img">
-      {TICKS.map((tick) => (
+      {ticks.map((tick, index) => (
         <text
           key={tick}
           x={x(tick)}
           y={10}
-          textAnchor={tick === 0 ? "start" : tick === 1 ? "end" : "middle"}
+          textAnchor={index === 0 ? "start" : index === ticks.length - 1 ? "end" : "middle"}
         >
-          {100 * tick}
+          {label(tick)}
         </text>
       ))}
     </svg>

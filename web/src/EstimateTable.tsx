@@ -8,16 +8,20 @@ export type Estimate = {
   estimate_mean: number;
   estimate_low: number;
   estimate_high: number;
+  national?: number | null;
+  provincial?: number | null;
 };
 
 type SortKey = "fed23_name" | "estimate_mean";
 
-const percent = (share: number) => (100 * share).toFixed(1);
-
-type Props = { estimates: Estimate[]; isOfficial: boolean };
+// topRank is set when the values are mean positions on a scale (1 to topRank), not shares.
+type Props = { estimates: Estimate[]; isOfficial: boolean; topRank?: number };
 
 // An official result is a count, not an estimate: it is shown without an interval.
-export default function EstimateTable({ estimates, isOfficial }: Props) {
+export default function EstimateTable({ estimates, isOfficial, topRank }: Props) {
+  const percent = (value: number) =>
+    topRank === undefined ? (100 * value).toFixed(1) : value.toFixed(2);
+
   const [sortKey, setSortKey] = useState<SortKey>("estimate_mean");
   const [ascending, setAscending] = useState(false);
 
@@ -43,13 +47,13 @@ export default function EstimateTable({ estimates, isOfficial }: Props) {
           <tr>
             <th onClick={() => sortBy("fed23_name")}>Riding{arrow("fed23_name")}</th>
             <th className="center" onClick={() => sortBy("estimate_mean")}>
-              {isOfficial ? "Result %" : "MRP %"}
+              {isOfficial ? "Result %" : topRank !== undefined ? `Mean (1 to ${topRank})` : "MRP %"}
               {arrow("estimate_mean")}
             </th>
             {!isOfficial && (
               <th>
-                90% interval (%)
-                <IntervalAxis />
+                90% interval{topRank === undefined && " (%)"}
+                <IntervalAxis topRank={topRank} />
               </th>
             )}
           </tr>
@@ -77,6 +81,7 @@ export default function EstimateTable({ estimates, isOfficial }: Props) {
                       low={estimate.estimate_low}
                       mean={estimate.estimate_mean}
                       high={estimate.estimate_high}
+                      topRank={topRank}
                     />
                   </td>
                 </>

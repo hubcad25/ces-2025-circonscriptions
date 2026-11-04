@@ -2,6 +2,7 @@ import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useState } from "react";
 import IntervalBar, { IntervalAxis } from "./IntervalBar";
 import { type Question, QUESTIONS } from "./questions";
+import QuestionSelect from "./QuestionSelect";
 import ridingQuery from "./riding.sql?raw";
 
 type Estimate = {
@@ -100,18 +101,7 @@ export default function RidingPage({ con, fed23 }: Props) {
       <h1>{estimates[0].fed23_name}</h1>
       <p className="subtitle">Riding {fed23}, 2023 boundaries.</p>
       <div className="controls">
-        <select
-          value={question.code}
-          onChange={(event) =>
-            setQuestion(QUESTIONS.find((option) => option.code === event.target.value)!)
-          }
-        >
-          {QUESTIONS.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <QuestionSelect value={question} onChange={setQuestion} />
       </div>
       <QuestionTable
         question={question}

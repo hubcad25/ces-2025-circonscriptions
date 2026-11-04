@@ -14,7 +14,7 @@ Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12).
 make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
 make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
-make mrp       # fits the MRP model for the vote and attitude questions (~25 min)
+make mrp       # fits the MRP model for the vote and attitude questions (~75 min)
 make export    # writes the website data to web/public/data/ (Parquet and GeoJSON)
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
@@ -23,7 +23,7 @@ make lint      # ruff check + format --check
 make test      # data quality checks on data/ces.duckdb
 ```
 
-Times were measured on a 16-core laptop; `make mrp` runs four MCMC chains in parallel and is slower with fewer cores.
+Times were measured on a 16-core laptop; `make mrp` runs four MCMC chains in parallel and is slower with fewer cores. A fit stops with an error if its chains disagree (split R-hat above 1.1), so that a stuck chain never reaches the estimates.
 
 To check a code change without waiting for a full fit, `uv run python -m pipeline.mrp <question> --quick` runs 20 iterations per chain (about 20 s) and saves nothing.
 
@@ -72,14 +72,15 @@ Current tables:
 - `analytics.results_fed`: one row per riding × party (votes, share, rank, winner, lead over the next party); 343 ridings, matches the official seat count (169 LPC, 144 CPC, 22 BQ, 7 NDP, 1 GPC)
 - `analytics.past_vote_fed`: share of 2021 electors by vote per 2013 riding, non-voters as `NONE`
 - `analytics.fed_predictors`: standardized riding predictors for the MRP model (French and other mother tongue, bachelor's degree, log density)
-- `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts: `vote_post`, `vote_pre` (LPC, CPC, NDP, BQ, OTH), and the attitude questions `immigration` (`cps25_imm`), `spend_defence` (`cps25_spend_defence`) and `bilingualism` (`pes25_bilingualism`); "don't know" is dropped
+- `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts: `vote_post`, `vote_pre` (LPC, CPC, NDP, BQ, OTH), and 15 ordinal attitude questions on government spending and responsibilities, Canada–US relations, Indigenous peoples, social values, democracy, immigration and language (CES variable names in `sql/analytics/mrp_outcomes.sql`); "don't know" is dropped
 - `analytics.mrp_scales`: ordered categories of the ordinal questions, fitted with an ordered logit; the vote is fitted with a multinomial logit
 - `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
 - `analytics.mrp_exclusions`: categories that cannot occur in a province (a party with no candidate there, i.e. the Bloc outside Quebec); the model gives them a probability of zero
 - `analytics.fed_exclusions`: parties with no candidate in a 2023 riding (3 ridings in 2025, plus the Bloc outside Quebec)
 - `analytics.fed_estimates`: poststratified share per 2023 riding × category × draw; a party with no candidate in the riding is set to zero and the other shares are rescaled
-- `analytics.fed_summaries`: mean and widened 90% interval per question × 2023 riding × category, as read by the website
+- `analytics.fed_summaries`: mean and widened 90% interval per question × 2023 riding × category, as read by the website; ordinal questions also get grouped answers and their mean position on the scale (`mean`)
 - `analytics.national_summaries`: national share per question × category, from every census cell weighted by its adult population
+- `analytics.province_summaries`: the same per province, which the map compares ridings with when a province is chosen
 - `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.92 points for `vote_post`, 5.14 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
 
 ## Known limitations

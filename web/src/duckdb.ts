@@ -4,7 +4,7 @@ import ehWorker from "@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url";
 import mvpWasm from "@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url";
 import mvpWorker from "@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url";
 
-const TABLES = ["fed_summaries", "national_summaries", "vote_gaps"];
+const TABLES = ["fed_summaries", "national_summaries", "province_summaries", "vote_gaps"];
 
 // DuckDB picks the build that the browser supports (with or without WebAssembly exceptions).
 const BUNDLES: duckdb.DuckDBBundles = {
