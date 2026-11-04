@@ -78,7 +78,11 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
   const comparison = useMemo(
     () =>
       display === "canada" && national != null
-        ? { national, scaleLabels: question.categories.map((option) => option.label) }
+        ? {
+            national,
+            scaleLabels: question.categories.map((option) => option.label),
+            ends: question.ends!,
+          }
         : undefined,
     [display, question, national],
   );
@@ -139,16 +143,20 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
         <p className="stats">No riding matches.</p>
       ) : view === "map" ? (
         <RidingMap
+          title={question.label}
           ridings={estimates}
           color={category.color}
           comparison={comparison}
         />
       ) : (
-        <EstimateTable
-          estimates={estimates}
-          isOfficial={question.code === OFFICIAL_RESULTS}
-          topRank={display === "canada" ? question.categories.length : undefined}
-        />
+        <>
+          <h2 className="question">{question.label}</h2>
+          <EstimateTable
+            estimates={estimates}
+            isOfficial={question.code === OFFICIAL_RESULTS}
+            topRank={display === "canada" ? question.categories.length : undefined}
+          />
+        </>
       )}
     </div>
   );

@@ -13,6 +13,8 @@ export type Question = {
   categories: Category[];
   isOrdinal?: boolean;
   groups?: Category[];
+  // What leaning toward each end of the scale means, for the map legend.
+  ends?: [string, string];
 };
 
 const VOTE_CATEGORIES = PARTIES.map((party) => ({ ...party, label: party.code }));
@@ -42,6 +44,7 @@ export const QUESTIONS: Question[] = [
       { code: "more", label: "More", color: HIGH },
     ],
     isOrdinal: true,
+    ends: ["Fewer immigrants", "More immigrants"],
   },
   {
     code: "spend_defence",
@@ -52,6 +55,7 @@ export const QUESTIONS: Question[] = [
       { code: "more", label: "More", color: HIGH },
     ],
     isOrdinal: true,
+    ends: ["Less defence spending", "More defence spending"],
   },
   {
     code: "bilingualism",
@@ -63,6 +67,7 @@ export const QUESTIONS: Question[] = [
       { code: "grouped_high", label: "Agree", color: HIGH },
     ],
     isOrdinal: true,
+    ends: ["Bilingualism has not gone too far", "Bilingualism has gone too far"],
   },
   { code: "vote_post", label: "Reported vote (post-election wave)", categories: VOTE_CATEGORIES },
   { code: "vote_pre", label: "Vote intention (pre-election wave)", categories: VOTE_CATEGORIES },

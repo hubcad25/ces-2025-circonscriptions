@@ -38,13 +38,20 @@ const STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "background", type: "background", paint: { "background-color": BACKGROUND } }],
 };
 
-type Located = { fed23: number; estimate_mean: number };
+type Located = {
+  fed23: number;
+  estimate_mean: number;
+  estimate_low: number;
+  estimate_high: number;
+};
 
 // A comparison with Canada is set for mean positions on an answer scale: the national mean
 // and the answer labels, ranked from 1.
-type Comparison = { national: number; scaleLabels: string[] };
+type Comparison = { national: number; scaleLabels: string[]; ends: [string, string] };
 
 type Props = { ridings: Located[]; color: string; comparison?: Comparison };
+
+type MapProps = Props & { title: string };
 
 // Color stops are [position, color], with positions from 0 (low) to 1 (high).
 type Stops = [number, string][];
@@ -96,7 +103,7 @@ function colorScale({ ridings, color, comparison }: Props): Scale {
 
 function gradient(stops: Stops): string {
   const parts = stops.map(([position, stop]) => `${stop} ${100 * position}%`);
-  return `linear-gradient(to top, ${parts.join(", ")})`;
+  return `linear-gradient(to right, ${parts.join(", ")})`;
 }
 
 const signed = (value: number) =>
@@ -109,43 +116,110 @@ function formatValue(value: number, comparison?: Comparison): string {
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
+// A riding whose interval contains the national mean is not shown as different from Canada:
+// it keeps the middle color.
+function scaledValue(riding: Located, { low, high }: Scale, comparison?: Comparison): number {
+  const national = comparison?.national;
+  if (national !== undefined && riding.estimate_low <= national && national <= riding.estimate_high)
+    return 0.5;
+  // Kept within [0, 1]: ridings beyond the capped scale take the end colors.
+  return high > low ? clamp((riding.estimate_mean - low) / (high - low)) : 0.5;
+}
+
 // Ridings left out by the filters get no value.
 function showEstimates(map: maplibregl.Map, props: Props) {
   const { ridings, comparison } = props;
-  const { low, high, stops } = colorScale(props);
+  const scale = colorScale(props);
   map.removeFeatureState({ source: "ridings" });
   map.setPaintProperty("fill", "fill-color", [
     "case",
     ["==", ["feature-state", "scaled"], null],
     FILTERED_OUT_COLOR,
-    ["interpolate", ["linear"], ["feature-state", "scaled"], ...stops.flat()],
+    ["interpolate", ["linear"], ["feature-state", "scaled"], ...scale.stops.flat()],
   ]);
   for (const riding of ridings) {
     map.setFeatureState(
       { source: "ridings", id: riding.fed23 },
       {
         label: formatValue(riding.estimate_mean, comparison),
-        // Kept within [0, 1]: ridings beyond the capped scale take the end colors.
-        scaled: high > low ? clamp((riding.estimate_mean - low) / (high - low)) : 0.5,
+        scaled: scaledValue(riding, scale, comparison),
       },
     );
   }
 }
 
-// The legend of a comparison reads from Canada outwards, and recalls what the scale means.
+// The legend of a comparison reads from Canada outwards, and its caption explains the scale
+// with the question's own answers.
 type LegendProps = Comparison & { low: number; high: number };
 
-function ComparisonLegend({ national, scaleLabels, low, high }: LegendProps) {
+// Canada's average placed on the answer scale, so that 2.94 reads as "just below Agree", with
+// the color band drawn around it at its true width on the scale.
+function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
+  const { national, scaleLabels, ends } = comparison;
+  const position = (rank: number) => (100 * (rank - 1)) / (scaleLabels.length - 1);
+  const band = {
+    left: `${position(low)}%`,
+    width: `${position(high) - position(low)}%`,
+    background: gradient(COMPARISON_STOPS),
+  };
+  return (
+    <div className="legend scale-position">
+      <div className="scale-line">
+        <span className="scale-band" style={band} />
+        {scaleLabels.map((label, index) => (
+          <span key={label} className="scale-tick" style={{ left: `${position(index + 1)}%` }}>
+            {index + 1}
+            <br />
+            {label}
+          </span>
+        ))}
+        <span className="scale-marker" style={{ left: `${position(national)}%` }}>
+          Canada {national.toFixed(2)}
+        </span>
+      </div>
+      <div className="scale-ends">
+        <span style={{ color: LOW }}>
+          ← {ends[0]} ({signed(low - national)} vs Canada)
+        </span>
+        <span style={{ color: HIGH }}>
+          {ends[1]} ({signed(high - national)} vs Canada) →
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ShareLegend({ low, high, stops }: Scale) {
   return (
     <div className="legend">
-      <span>{signed(high - national)} or more vs Canada</span>
-      <span className="legend-bar" style={{ background: gradient(COMPARISON_STOPS) }} />
-      <span>{signed(low - national)} or less vs Canada</span>
-      <span className="legend-note">Canada: {national.toFixed(2)}</span>
-      <span className="legend-note">
-        {scaleLabels.map((label, index) => `${index + 1} ${label}`).join(" · ")}
-      </span>
+      <div className="legend-scale">
+        <span>{formatValue(low)}</span>
+        <span className="legend-bar" style={{ background: gradient(stops) }} />
+        <span>{formatValue(high)}</span>
+      </div>
     </div>
+  );
+}
+
+// Reading notes, shown under the map.
+function ComparisonNotes({ scaleLabels }: Comparison) {
+  const top = scaleLabels[scaleLabels.length - 1];
+  return (
+    <ul className="legend-caption">
+      <li>Each riding gets its average answer on the scale above.</li>
+      <li>+0.10 means a riding's average is 0.10 point above Canada's: it leans toward "{top}".</li>
+      <li>Grey: the riding cannot be told apart from Canada (its 90% interval includes Canada's average).</li>
+      <li>Colors stop growing at the ends of the bar, so that a few extreme ridings do not wash out the others.</li>
+    </ul>
+  );
+}
+
+function ShareNotes() {
+  return (
+    <ul className="legend-caption">
+      <li>Estimated share of people in each riding.</li>
+      <li>Colors run from the lowest riding to the highest, so that differences stand out even when the share is small everywhere.</li>
+    </ul>
   );
 }
 
@@ -189,7 +263,7 @@ async function addLayers(map: maplibregl.Map) {
   });
 }
 
-export default function RidingMap({ ridings, color, comparison }: Props) {
+export default function RidingMap({ title, ridings, color, comparison }: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const loaded = useRef(false);
@@ -247,19 +321,16 @@ export default function RidingMap({ ridings, color, comparison }: Props) {
   const { low, high, stops } = colorScale({ ridings, color, comparison });
   return (
     <div className="map-wrap">
+      <div className="map-header">
+        <h2 className="question">{title}</h2>
+        {comparison ? (
+          <ComparisonLegend {...comparison} low={low} high={high} />
+        ) : (
+          <ShareLegend low={low} high={high} stops={stops} />
+        )}
+      </div>
       <div className="map" ref={container} />
-      {comparison ? (
-        <ComparisonLegend {...comparison} low={low} high={high} />
-      ) : (
-        <div className="legend">
-          <span>{formatValue(high)}</span>
-          <span
-            className="legend-bar"
-            style={{ background: gradient(stops) }}
-          />
-          <span>{formatValue(low)}</span>
-        </div>
-      )}
+      {comparison ? <ComparisonNotes {...comparison} /> : <ShareNotes />}
     </div>
   );
 }
