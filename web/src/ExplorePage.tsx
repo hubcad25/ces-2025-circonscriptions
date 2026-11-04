@@ -4,6 +4,7 @@ import EstimateTable, { type Estimate } from "./EstimateTable";
 import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
 import { type Category, HIGH, OFFICIAL_RESULTS, type Question, QUESTIONS } from "./questions";
+import QuestionSelect from "./QuestionSelect";
 import resultsQuery from "./results.sql?raw";
 import RidingMap from "./RidingMap";
 
@@ -19,7 +20,7 @@ const DISPLAY_LABELS: Record<Exclude<Display, "canada">, string> = {
 // mean when a province is chosen.
 function displays(question: Question): Display[] {
   if (!question.isOrdinal) return ["detailed"];
-  return question.groups ? ["grouped", "canada", "detailed"] : ["canada", "detailed"];
+  return question.groups ? ["canada", "grouped", "detailed"] : ["canada", "detailed"];
 }
 
 // An ordinal question opens on its comparison with Canada; the others on their shares.
@@ -69,11 +70,6 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
     setCategory(displayCategories(nextQuestion, nextDisplay)[0]);
   }
 
-  function chooseQuestion(code: string) {
-    const next = QUESTIONS.find((option) => option.code === code)!;
-    choose(next, defaultDisplay(next));
-  }
-
   // Ridings are compared with their province when one is chosen, with Canada otherwise.
   const referenceName = filter.province || "Canada";
   const reference = filter.province
@@ -101,13 +97,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
       <h1>Explore the estimates</h1>
       <p className="subtitle">MRP estimates by riding from the Canadian Election Study.</p>
       <div className="controls">
-        <select value={question.code} onChange={(event) => chooseQuestion(event.target.value)}>
-          {QUESTIONS.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <QuestionSelect value={question} onChange={(next) => choose(next, defaultDisplay(next))} />
         <span className="spacer" />
         {(["map", "table"] as const).map((option) => (
           <button
@@ -129,7 +119,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
               aria-pressed={option === display}
               onClick={() => choose(question, option)}
             >
-              {option === "canada" ? `vs ${referenceName}` : DISPLAY_LABELS[option]}
+              {option === "canada" ? `Average vs ${referenceName}` : DISPLAY_LABELS[option]}
             </button>
           ))}
         </div>

@@ -3,7 +3,7 @@ CREATE SCHEMA IF NOT EXISTS analytics;
 -- Ordered answer categories of the ordinal questions, from lowest to highest. The MRP model
 -- fits these with an ordered logit (one effect per group and ordered cutpoints); questions
 -- not listed here, such as the vote, are fitted with a multinomial logit. The side groups the
--- answers for the website (e.g. both "agree" answers as high) and gives the net score.
+-- answers for the website (e.g. both "agree" answers as high); the rank gives the mean position.
 CREATE OR REPLACE TABLE analytics.mrp_scales AS
 SELECT *
 FROM (
@@ -18,6 +18,54 @@ FROM (
         ('bilingualism', 2, 'somewhat_disagree', 'low'),
         ('bilingualism', 3, 'neither', 'middle'),
         ('bilingualism', 4, 'somewhat_agree', 'high'),
-        ('bilingualism', 5, 'strongly_agree', 'high')
+        ('bilingualism', 5, 'strongly_agree', 'high'),
+        ('decent_housing', 1, 'strongly_disagree', 'low'),
+        ('decent_housing', 2, 'somewhat_disagree', 'low'),
+        ('decent_housing', 3, 'neither', 'middle'),
+        ('decent_housing', 4, 'somewhat_agree', 'high'),
+        ('decent_housing', 5, 'strongly_agree', 'high'),
+        ('spend_environment', 1, 'less', 'low'),
+        ('spend_environment', 2, 'same', 'middle'),
+        ('spend_environment', 3, 'more', 'high'),
+        ('ties_us', 1, 'much_more_distant', 'low'),
+        ('ties_us', 2, 'somewhat_more_distant', 'low'),
+        ('ties_us', 3, 'same', 'middle'),
+        ('ties_us', 4, 'somewhat_closer', 'high'),
+        ('ties_us', 5, 'much_closer', 'high'),
+        ('tariffs_us', 1, 'strongly_oppose', 'low'),
+        ('tariffs_us', 2, 'somewhat_oppose', 'low'),
+        ('tariffs_us', 3, 'somewhat_support', 'high'),
+        ('tariffs_us', 4, 'strongly_support', 'high'),
+        ('spend_reconciliation', 1, 'less', 'low'),
+        ('spend_reconciliation', 2, 'same', 'middle'),
+        ('spend_reconciliation', 3, 'more', 'high'),
+        ('indigenous_deserve', 1, 'strongly_disagree', 'low'),
+        ('indigenous_deserve', 2, 'somewhat_disagree', 'low'),
+        ('indigenous_deserve', 3, 'neither', 'middle'),
+        ('indigenous_deserve', 4, 'somewhat_agree', 'high'),
+        ('indigenous_deserve', 5, 'strongly_agree', 'high'),
+        ('ban_abortion', 1, 'no', 'low'),
+        ('ban_abortion', 2, 'some_circumstances', 'middle'),
+        ('ban_abortion', 3, 'yes', 'high'),
+        ('women_home', 1, 'strongly_disagree', 'low'),
+        ('women_home', 2, 'somewhat_disagree', 'low'),
+        ('women_home', 3, 'neither', 'middle'),
+        ('women_home', 4, 'somewhat_agree', 'high'),
+        ('women_home', 5, 'strongly_agree', 'high'),
+        ('religion_importance', 1, 'not_at_all', 'low'),
+        ('religion_importance', 2, 'not_very', 'low'),
+        ('religion_importance', 3, 'somewhat', 'high'),
+        ('religion_importance', 4, 'very', 'high'),
+        ('democracy_satisfaction', 1, 'not_at_all', 'low'),
+        ('democracy_satisfaction', 2, 'not_very', 'low'),
+        ('democracy_satisfaction', 3, 'fairly', 'high'),
+        ('democracy_satisfaction', 4, 'very', 'high'),
+        ('politicians_trustworthy', 1, 'strongly_disagree', 'low'),
+        ('politicians_trustworthy', 2, 'somewhat_disagree', 'low'),
+        ('politicians_trustworthy', 3, 'neither', 'middle'),
+        ('politicians_trustworthy', 4, 'somewhat_agree', 'high'),
+        ('politicians_trustworthy', 5, 'strongly_agree', 'high'),
+        ('french_threatened', 1, 'no', 'low'),
+        ('french_threatened', 2, 'yes', 'high')
 ) AS scales (question, rank, category, side)
 ORDER BY question, rank;

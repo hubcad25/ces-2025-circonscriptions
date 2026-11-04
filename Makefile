@@ -19,6 +19,18 @@ mrp:
 	uv run python -m pipeline.mrp immigration
 	uv run python -m pipeline.mrp spend_defence
 	uv run python -m pipeline.mrp bilingualism
+	uv run python -m pipeline.mrp decent_housing
+	uv run python -m pipeline.mrp spend_environment
+	uv run python -m pipeline.mrp ties_us
+	uv run python -m pipeline.mrp tariffs_us
+	uv run python -m pipeline.mrp spend_reconciliation
+	uv run python -m pipeline.mrp indigenous_deserve
+	uv run python -m pipeline.mrp ban_abortion
+	uv run python -m pipeline.mrp women_home
+	uv run python -m pipeline.mrp religion_importance
+	uv run python -m pipeline.mrp democracy_satisfaction
+	uv run python -m pipeline.mrp politicians_trustworthy
+	uv run python -m pipeline.mrp french_threatened
 
 export:
 	uv run python -m pipeline.export
