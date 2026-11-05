@@ -38,7 +38,7 @@ export default function App() {
   return (
     <div className="layout">
       <nav className="sidebar">
-        <div className="sidebar-title">CES 2025 by riding</div>
+        <div className="sidebar-title">What Your Riding Thinks</div>
         {TABS.map((tab) => (
           <a key={tab.hash} href={tab.hash} aria-current={tab.hash === hash ? "page" : undefined}>
             {tab.label}
