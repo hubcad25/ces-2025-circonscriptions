@@ -66,7 +66,7 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
                 {column.key === sortKey ? (ascending ? " ↑" : " ↓") : ""}
               </th>
             ))}
-            <th>
+            <th className="wide-only">
               90% interval and result (%)
               <IntervalAxis />
             </th>
@@ -96,7 +96,7 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
               <td className={riding.is_covered ? undefined : "miss"}>
                 {riding.is_covered ? "inside" : "outside"}
               </td>
-              <td>
+              <td className="wide-only">
                 <IntervalBar
                   low={riding.estimate_low}
                   mean={riding.estimate_mean}

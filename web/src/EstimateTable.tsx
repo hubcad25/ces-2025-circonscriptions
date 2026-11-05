@@ -51,7 +51,7 @@ export default function EstimateTable({ estimates, isOfficial, topRank }: Props)
               {arrow("estimate_mean")}
             </th>
             {!isOfficial && (
-              <th>
+              <th className="wide-only">
                 90% interval{topRank === undefined && " (%)"}
                 <IntervalAxis topRank={topRank} />
               </th>
@@ -76,7 +76,7 @@ export default function EstimateTable({ estimates, isOfficial, topRank }: Props)
                       <span className="bound">{percent(estimate.estimate_high)}</span>
                     </div>
                   </td>
-                  <td>
+                  <td className="wide-only">
                     <IntervalBar
                       low={estimate.estimate_low}
                       mean={estimate.estimate_mean}

@@ -606,3 +606,41 @@ main:has(.map-wrap) {
 .about a {
   text-decoration: underline;
 }
+
+/* On phones, the sidebar becomes a bar across the top so the page keeps the full width. */
+@media (max-width: 700px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    width: auto;
+    height: auto;
+    padding: 8px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-title {
+    width: 100%;
+    margin: 0 8px 4px;
+  }
+
+  main {
+    padding: 20px 16px 40px;
+  }
+
+  /* The interval bar repeats the bounds written next to the estimate. */
+  .wide-only {
+    display: none;
+  }
+
+  .map {
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+}
