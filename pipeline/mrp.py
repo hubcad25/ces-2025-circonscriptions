@@ -16,9 +16,11 @@ from pipeline.ipf import AGE_GROUPS, EDUCATION, GENDERS, LANGUAGES, PAST_VOTES
 from pipeline.load import DATABASE, run_scripts
 
 N_CHAINS = 4
-# Warmup and kept iterations per chain. A quick run only checks that the code runs end to end
-# (about 20 s instead of 5 min); its draws are not saved.
-N_ITERATIONS = 500
+# Warmup and kept iterations per chain. Some 5-point scales (trade_jobs, no_say) did not
+# converge with a 500-iteration warmup. A quick run only checks that the code runs end to end
+# (about 20 s instead of 8 min); its draws are not saved.
+N_WARMUP = 1000
+N_SAMPLES = 500
 QUICK_ITERATIONS = 20
 N_DRAWS = 100
 SEED = 2025
@@ -218,13 +220,14 @@ def fit(
     n_categories: int,
     is_ordinal: bool,
     outcome: np.ndarray,
-    n_iterations: int,
+    n_warmup: int,
+    n_samples: int,
 ) -> MCMC:
     mcmc = MCMC(
         # Starting every chain at the prior median avoids chains stuck from a bad random start.
         NUTS(model, init_strategy=init_to_median),
-        num_warmup=n_iterations,
-        num_samples=n_iterations,
+        num_warmup=n_warmup,
+        num_samples=n_samples,
         num_chains=N_CHAINS,
         chain_method="parallel",
         progress_bar=True,
@@ -345,9 +348,18 @@ def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
     survey_codes = encode(survey, ridings)
     if not allowed[survey_codes["province"], outcome].all():
         raise ValueError("Some respondents chose a category excluded from their province")
-    n_iterations = QUICK_ITERATIONS if is_quick else N_ITERATIONS
+    n_warmup = QUICK_ITERATIONS if is_quick else N_WARMUP
+    n_samples = QUICK_ITERATIONS if is_quick else N_SAMPLES
     mcmc = fit(
-        survey_codes, sizes, predictors, allowed, len(categories), is_ordinal, outcome, n_iterations
+        survey_codes,
+        sizes,
+        predictors,
+        allowed,
+        len(categories),
+        is_ordinal,
+        outcome,
+        n_warmup,
+        n_samples,
     )
     if not is_quick:
         check_convergence(mcmc)
