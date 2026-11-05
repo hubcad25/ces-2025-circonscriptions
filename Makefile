@@ -31,6 +31,25 @@ mrp:
 	uv run python -m pipeline.mrp democracy_satisfaction
 	uv run python -m pipeline.mrp politicians_trustworthy
 	uv run python -m pipeline.mrp french_threatened
+	uv run python -m pipeline.mrp immigrants_jobs
+	uv run python -m pipeline.mrp immigrants_crime
+	uv run python -m pipeline.mrp immigrants_fit_in
+	uv run python -m pipeline.mrp reduce_inequality
+	uv run python -m pipeline.mrp private_jobs
+	uv run python -m pipeline.mrp welfare_dependency
+	uv run python -m pipeline.mrp trade_jobs
+	uv run python -m pipeline.mrp spend_education
+	uv run python -m pipeline.mrp spend_immigrants
+	uv run python -m pipeline.mrp equal_rights
+	uv run python -m pipeline.mrp newer_lifestyles
+	uv run python -m pipeline.mrp family_values
+	uv run python -m pipeline.mrp climate_change
+	uv run python -m pipeline.mrp politicians_lie
+	uv run python -m pipeline.mrp strong_leader
+	uv run python -m pipeline.mrp no_say
+	uv run python -m pipeline.mrp people_trusted
+	uv run python -m pipeline.mrp province_treatment
+	uv run python -m pipeline.mrp economy_past_year
 
 export:
 	uv run python -m pipeline.export
