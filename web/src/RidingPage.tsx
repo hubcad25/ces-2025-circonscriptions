@@ -5,6 +5,7 @@ import { type Category, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import ridingQuery from "./riding.sql?raw";
 import RidingSearch from "./RidingSearch";
+import SimilarRidings from "./SimilarRidings";
 
 type Estimate = {
   question: string;
@@ -127,6 +128,7 @@ export default function RidingPage({ con, fed23 }: Props) {
         <li>Riding row: the riding's estimate (dot) and its 90% interval (bar), with the official result as a white line for the vote.</li>
         <li>Rows below: the same answer for {estimates[0].province} as a whole (white dot) and for Canada (red maple leaf).</li>
       </ul>
+      <SimilarRidings con={con} fed23={fed23} />
     </>
   );
 }
