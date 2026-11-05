@@ -591,3 +591,56 @@ main:has(.map-wrap) {
   gap: 0.5rem;
   font-size: 0.85rem;
 }
+
+.about {
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+.about h2 {
+  margin: 28px 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.about a {
+  text-decoration: underline;
+}
+
+/* On phones, the sidebar becomes a bar across the top so the page keeps the full width. */
+@media (max-width: 700px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    width: auto;
+    height: auto;
+    padding: 8px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-title {
+    width: 100%;
+    margin: 0 8px 4px;
+  }
+
+  main {
+    padding: 20px 16px 40px;
+  }
+
+  /* The interval bar repeats the bounds written next to the estimate. */
+  .wide-only {
+    display: none;
+  }
+
+  .map {
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+}
