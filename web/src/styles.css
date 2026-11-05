@@ -591,3 +591,18 @@ main:has(.map-wrap) {
   gap: 0.5rem;
   font-size: 0.85rem;
 }
+
+.about {
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+.about h2 {
+  margin: 28px 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.about a {
+  text-decoration: underline;
+}
