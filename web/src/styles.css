@@ -322,8 +322,10 @@ main:has(.explore) {
 
 /* No overflow here: a scrolling container would keep the sticky header from following the
    page scroll. */
+/* A table wider than a phone scrolls on its own, not the whole page. */
 .table-wrap {
   width: 100%;
+  overflow-x: auto;
 }
 
 table {
@@ -915,7 +917,7 @@ main:has(.map-wrap) {
 
 .profile-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
   gap: 32px;
 }
 
@@ -1082,6 +1084,7 @@ main:has(.riding-page) {
 }
 
 .minimap {
+  max-width: 100%;
   margin: 0;
 }
 
@@ -1111,6 +1114,14 @@ main:has(.riding-page) {
   padding: 8px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
+}
+
+/* The bar spans the page padding, which is narrower on a phone. */
+@media (max-width: 700px) {
+  .section-nav {
+    margin: 16px -16px 0;
+    padding: 8px 16px;
+  }
 }
 
 .section-nav button {
@@ -1170,6 +1181,25 @@ main:has(.riding-page) {
 .facet:first-child .facet-title {
   height: 56px;
   border-bottom: none;
+}
+
+.facets.stacked {
+  flex-direction: column;
+  gap: 20px;
+}
+
+.facets.stacked .facet-title {
+  height: auto;
+  border-bottom: 2px solid var(--party);
+}
+
+.facet-row {
+  display: flex;
+}
+
+/* Lines the row names up with the chart, below its axis. */
+.facet-labels {
+  padding-top: 16px;
 }
 
 .riding-chart .track {

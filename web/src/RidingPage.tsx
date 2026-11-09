@@ -60,28 +60,32 @@ function QuestionCharts({ categories, estimates }: ChartProps) {
     estimates.some((row) => row.category === category.code),
   );
   const perChart = (available - LABEL_WIDTH) / shown.length - FACET_GAP;
-  const plotWidth = Math.max(MIN_PLOT_WIDTH, perChart - chartWidth(0));
+  // On a narrow screen the charts no longer fit side by side: they stack, each with its own
+  // row names and the full width.
+  const isStacked = perChart - chartWidth(0) < MIN_PLOT_WIDTH;
+  const plotWidth = isStacked
+    ? Math.max(MIN_PLOT_WIDTH, available - LABEL_WIDTH - chartWidth(0))
+    : perChart - chartWidth(0);
+
+  const labels = shown.length > 0 && (
+    <RidingChartLabels
+      ridingName={estimates[0].fed23_name}
+      provinceName={provinceName(estimates[0].province, lang)}
+    />
+  );
 
   return (
-    <div className="facets" ref={container}>
-      {shown.length > 0 && (
+    <div className={isStacked ? "facets stacked" : "facets"} ref={container}>
+      {!isStacked && labels && (
         <div className="facet">
           <div className="facet-title" />
-          <RidingChartLabels
-            ridingName={estimates[0].fed23_name}
-            provinceName={provinceName(estimates[0].province, lang)}
-          />
+          {labels}
         </div>
       )}
       {shown.map((category) => {
         const estimate = estimates.find((row) => row.category === category.code)!;
-        return (
-          <div
-            key={category.code}
-            className="facet"
-            style={{ "--party": category.color } as CSSProperties}
-          >
-            <div className="facet-title">{category.label[lang]}</div>
+        const chart = (
+          <div>
             <RidingChartAxis plotWidth={plotWidth} />
             <RidingChart
               plotWidth={plotWidth}
@@ -92,6 +96,23 @@ function QuestionCharts({ categories, estimates }: ChartProps) {
               national={estimate.national_share}
               provincial={estimate.provincial_share}
             />
+          </div>
+        );
+        return (
+          <div
+            key={category.code}
+            className="facet"
+            style={{ "--party": category.color } as CSSProperties}
+          >
+            <div className="facet-title">{category.label[lang]}</div>
+            {isStacked ? (
+              <div className="facet-row">
+                <div className="facet-labels">{labels}</div>
+                {chart}
+              </div>
+            ) : (
+              chart
+            )}
           </div>
         );
       })}
