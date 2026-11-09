@@ -1,3 +1,5 @@
+import { useLang } from "./i18n";
+
 // One small chart per answer, set side by side. Each has three rows on the same 0 to 100% scale:
 // the riding's estimate (interval, mean and official result), its province, then Canada. The row
 // names are drawn once, to the left of the first chart.
@@ -85,13 +87,15 @@ export default function RidingChart(props: Props) {
 }
 
 // Placed above each chart, with the same width and ticks.
+// Only the last tick carries the unit: enough to read the scale without crowding it.
 export function RidingChartAxis({ plotWidth }: { plotWidth: number }) {
+  const { t } = useLang();
   const x = scale(plotWidth);
   return (
     <svg className="riding-chart-axis" width={chartWidth(plotWidth)} height={16} role="img">
       {TICKS.map((tick) => (
         <text key={tick} x={x(tick)} y={13} textAnchor="middle">
-          {100 * tick}
+          {tick === 1 ? t("100%", "100 %") : 100 * tick}
         </text>
       ))}
     </svg>
