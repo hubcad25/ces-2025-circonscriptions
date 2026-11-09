@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLang } from "./i18n";
+import { type Text, useLang } from "./i18n";
 import IntervalBar, { IntervalAxis } from "./IntervalBar";
 import { provinceLabel } from "./provinces";
 
@@ -18,12 +18,12 @@ export type Riding = {
 type SortKey = "fed23_name" | "estimate_mean" | "actual_share" | "gap" | "is_covered";
 
 // The class sets the header alignment so that it lines up with the values below.
-const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
-  { key: "fed23_name", label: "Riding" },
-  { key: "estimate_mean", label: "MRP %", className: "center" },
-  { key: "actual_share", label: "Result %", className: "number" },
-  { key: "gap", label: "Gap (pts)", className: "number" },
-  { key: "is_covered", label: "Interval" },
+const COLUMNS: { key: SortKey; label: Text; className?: string }[] = [
+  { key: "fed23_name", label: { en: "Riding", fr: "Circonscription" } },
+  { key: "estimate_mean", label: { en: "MRP %", fr: "MRP %" }, className: "center" },
+  { key: "actual_share", label: { en: "Result %", fr: "Résultat %" }, className: "number" },
+  { key: "gap", label: { en: "Gap (pts)", fr: "Écart (pts)" }, className: "number" },
+  { key: "is_covered", label: { en: "Interval", fr: "Intervalle" } },
 ];
 
 const percent = (share: number) => (100 * share).toFixed(1);
@@ -42,7 +42,7 @@ function gapColor(gap: number, maxGap: number): string {
 }
 
 export default function RidingTable({ ridings }: { ridings: Riding[] }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [sortKey, setSortKey] = useState<SortKey>("fed23_name");
   const [ascending, setAscending] = useState(true);
 
@@ -65,12 +65,12 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
                 className={column.className}
                 onClick={() => sortBy(column.key)}
               >
-                {column.label}
+                {column.label[lang]}
                 {column.key === sortKey ? (ascending ? " ↑" : " ↓") : ""}
               </th>
             ))}
             <th className="wide-only">
-              90% interval and result (%)
+              {t("90% interval and result (%)", "Intervalle à 90 % et résultat (%)")}
               <IntervalAxis />
             </th>
           </tr>
@@ -97,7 +97,7 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
                 {signed(riding.gap)}
               </td>
               <td className={riding.is_covered ? undefined : "miss"}>
-                {riding.is_covered ? "inside" : "outside"}
+                {riding.is_covered ? t("inside", "dedans") : t("outside", "dehors")}
               </td>
               <td className="wide-only">
                 <IntervalBar
