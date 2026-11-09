@@ -129,7 +129,10 @@ export default function RidingProfile({ estimates, onSelect }: Props) {
     <section id="standouts" className="profile">
       <h2>{t("What stands out", "Ce qui se démarque")}</h2>
       <p className="profile-legend">
-        <span className="key-mean" /> {estimates[0].fed23_name}
+        <span className="key-mean" />
+        <span className="key-name" title={estimates[0].fed23_name}>
+          {estimates[0].fed23_name}
+        </span>
         <span className="key-reference" /> {t("Reference", "Référence")}
       </p>
       <div className="profile-columns">
