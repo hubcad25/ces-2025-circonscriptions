@@ -2,6 +2,7 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { FeatureCollection, MultiPolygon } from "geojson";
+import { Protocol } from "pmtiles";
 import { type Lang, type Text, useLang } from "./i18n";
 import { provinceLabel } from "./provinces";
 import { HIGH, LOW } from "./questions";
@@ -13,6 +14,7 @@ export const dataUrl = (name: string) =>
 
 // MapLibre 6 ships its web worker as a separate file that the bundler must serve.
 maplibregl.setWorkerUrl(workerUrl);
+maplibregl.addProtocol("pmtiles", new Protocol().tile);
 
 // From Point Pelee (41.7°N) to just north of Quebec (62.6°N): the Arctic islands are left out
 // of the first view, where they would take most of the space.
@@ -149,11 +151,13 @@ function scaledValue(riding: Located, { low, high }: Scale, comparison?: Compari
   return high > low ? clamp((riding.estimate_mean - low) / (high - low)) : 0.5;
 }
 
+const RIDINGS = { source: "ridings", sourceLayer: "ridings" };
+
 // Ridings left out by the filters get no value.
 function showEstimates(map: maplibregl.Map, props: Props) {
   const { ridings, comparison } = props;
   const scale = colorScale(props);
-  map.removeFeatureState({ source: "ridings" });
+  map.removeFeatureState(RIDINGS);
   map.setPaintProperty("fill", "fill-color", [
     "case",
     ["==", ["feature-state", "scaled"], null],
@@ -162,7 +166,7 @@ function showEstimates(map: maplibregl.Map, props: Props) {
   ]);
   for (const riding of ridings) {
     map.setFeatureState(
-      { source: "ridings", id: riding.fed23 },
+      { ...RIDINGS, id: riding.fed23 },
       { scaled: scaledValue(riding, scale, comparison) },
     );
   }
@@ -302,26 +306,26 @@ function popupCard(
 async function addLayers(map: maplibregl.Map) {
   const canada: FeatureCollection = await (await fetch(dataUrl("canada.geojson"))).json();
 
-  // promoteId lets the estimates be attached to each riding by its code. The outlines are
-  // simplified to 500 m, so tiles past zoom 8 would add no detail: past it, MapLibre scales
-  // the zoom 8 tiles instead of cutting new ones on every zoom.
+  // The tiles are cut by the export (tippecanoe) up to zoom 8; past it, MapLibre scales them.
+  // promoteId lets the estimates be attached to each riding by its code.
   map.addSource("ridings", {
-    type: "geojson",
-    data: dataUrl("ridings.geojson"),
+    type: "vector",
+    url: `pmtiles://${dataUrl("ridings.pmtiles")}`,
     promoteId: "fed23",
-    maxzoom: 8,
   });
-  map.addLayer({ id: "fill", type: "fill", source: "ridings" });
+  map.addLayer({ id: "fill", type: "fill", source: "ridings", "source-layer": "ridings" });
   map.addLayer({
     id: "outline",
     type: "line",
     source: "ridings",
+    "source-layer": "ridings",
     paint: { "line-color": BACKGROUND, "line-width": 0.4 },
   });
   map.addLayer({
     id: "hover",
     type: "line",
     source: "ridings",
+    "source-layer": "ridings",
     // A feature state changes on the GPU right away; a filter would re-cut the tiles in the
     // worker, so the outline would trail behind the mouse.
     paint: {
@@ -406,8 +410,8 @@ export default function RidingMap({ ridings, color, comparison }: Props) {
 
     let hovered: number | null = null;
     const setHover = (fed23: number | null) => {
-      if (hovered !== null) instance.setFeatureState({ source: "ridings", id: hovered }, { hover: false });
-      if (fed23 !== null) instance.setFeatureState({ source: "ridings", id: fed23 }, { hover: true });
+      if (hovered !== null) instance.setFeatureState({ ...RIDINGS, id: hovered }, { hover: false });
+      if (fed23 !== null) instance.setFeatureState({ ...RIDINGS, id: fed23 }, { hover: true });
       hovered = fed23;
     };
     // The card follows the pointer itself; it is only rebuilt when the riding changes.
