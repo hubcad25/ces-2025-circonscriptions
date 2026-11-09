@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import duckdb
@@ -51,6 +52,29 @@ FROM staging.ridings_2023
 """
 
 
+# Vector tiles cut ahead of time, so that the browser does not have to cut the GeoJSON on every
+# zoom. Zoom 8 is already finer than the 500 m simplification; MapLibre scales it past that.
+# Shared nodes are kept so that neighbours simplify the same way at low zooms, without gaps;
+# no feature or tile size limit, so that no riding is dropped or turned into a square.
+def export_tiles(geojson: Path) -> None:
+    subprocess.run(
+        [
+            "tippecanoe",
+            f"--output={geojson.with_suffix('.pmtiles')}",
+            "--force",
+            "--quiet",
+            "--layer=ridings",
+            "--maximum-zoom=8",
+            "--no-simplification-of-shared-nodes",
+            "--no-tiny-polygon-reduction",
+            "--no-feature-limit",
+            "--no-tile-size-limit",
+            str(geojson),
+        ],
+        check=True,
+    )
+
+
 def export(database: Path, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     with duckdb.connect(database, read_only=True) as con:
@@ -65,6 +89,7 @@ def export(database: Path, destination: Path) -> None:
                     FORMAT GDAL, DRIVER 'GeoJSON', LAYER_CREATION_OPTIONS 'COORDINATE_PRECISION=5'
                 )
             """)
+    export_tiles(destination / "ridings.geojson")
 
 
 if __name__ == "__main__":

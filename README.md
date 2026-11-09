@@ -8,14 +8,14 @@ Pipeline: Python and SQL (DuckDB). Website: https://hubcad25.github.io/ces-2025-
 
 ## Run
 
-Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12).
+Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12) and, for `make export`, [tippecanoe](https://github.com/felt/tippecanoe).
 
 ```bash
 make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
 make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
 make mrp       # fits the MRP model for the vote and attitude questions (~75 min)
-make export    # writes the website data to web/public/data/ (Parquet and GeoJSON)
+make export    # writes the website data to web/public/data/ (Parquet, GeoJSON, PMTiles)
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
 make ui        # DuckDB web UI, read-only
