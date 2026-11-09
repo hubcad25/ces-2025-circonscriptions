@@ -1,7 +1,7 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import similarQuery from "./similar.sql?raw";
 
-// Standardized features of one riding, keyed by feature code (a question or vote_<party>).
+// Standardized attitudes of one riding, keyed by question code.
 export type RidingFeatures = Map<string, number>;
 
 export type Neighbour = { fed23: number; distance: number };
@@ -32,16 +32,16 @@ export function distance(a: RidingFeatures, b: RidingFeatures, weights: Map<stri
   return totalWeight === 0 ? 0 : Math.sqrt(sum / totalWeight);
 }
 
-export function nearestRidings(
+// Every other riding, from the closest to the furthest.
+export function rankRidings(
   fed23: number,
   ridings: Map<number, RidingFeatures>,
   weights: Map<string, number>,
-  count: number,
 ): Neighbour[] {
   const target = ridings.get(fed23)!;
   const neighbours: Neighbour[] = [];
   for (const [other, features] of ridings) {
     if (other !== fed23) neighbours.push({ fed23: other, distance: distance(target, features, weights) });
   }
-  return neighbours.sort((a, b) => a.distance - b.distance).slice(0, count);
+  return neighbours.sort((a, b) => a.distance - b.distance);
 }

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useLang } from "./i18n";
 import IntervalBar, { IntervalAxis } from "./IntervalBar";
+import { provinceLabel } from "./provinces";
 
 export type Riding = {
   fed23: number;
@@ -40,6 +42,7 @@ function gapColor(gap: number, maxGap: number): string {
 }
 
 export default function RidingTable({ ridings }: { ridings: Riding[] }) {
+  const { lang } = useLang();
   const [sortKey, setSortKey] = useState<SortKey>("fed23_name");
   const [ascending, setAscending] = useState(true);
 
@@ -77,7 +80,7 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
             <tr key={riding.fed23}>
               <td>
                 <a href={`#/riding/${riding.fed23}`}>{riding.fed23_name}</a>{" "}
-                <span className="province">{riding.province}</span>
+                <span className="province">{provinceLabel(riding.province, lang)}</span>
               </td>
               <td>
                 <div className="estimate">

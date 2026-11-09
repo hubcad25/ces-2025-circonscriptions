@@ -1,11 +1,13 @@
+import { useLang } from "./i18n";
 import { type Question, QUESTIONS } from "./questions";
 
 // Themes keep the order in which they first appear in QUESTIONS.
-const THEMES = [...new Set(QUESTIONS.map((question) => question.theme))];
+const THEMES = [...new Map(QUESTIONS.map((question) => [question.theme.en, question.theme])).values()];
 
 type Props = { value: Question; onChange: (question: Question) => void };
 
 export default function QuestionSelect({ value, onChange }: Props) {
+  const { lang } = useLang();
   return (
     <select
       className="question-select"
@@ -16,10 +18,10 @@ export default function QuestionSelect({ value, onChange }: Props) {
       }
     >
       {THEMES.map((theme) => (
-        <optgroup key={theme} label={theme}>
-          {QUESTIONS.filter((question) => question.theme === theme).map((question) => (
+        <optgroup key={theme.en} label={theme[lang]}>
+          {QUESTIONS.filter((question) => question.theme.en === theme.en).map((question) => (
             <option key={question.code} value={question.code}>
-              {question.label}
+              {question.label[lang]}
             </option>
           ))}
         </optgroup>

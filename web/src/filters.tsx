@@ -1,8 +1,6 @@
 import { type RefObject, useEffect, useRef } from "react";
 import { useLang } from "./i18n";
-
-// West to east, then the territories, as in most Canadian tables.
-const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "YT", "NT", "NU"];
+import { PROVINCES } from "./provinces";
 
 // Lets "montreal" match "Montréal" and "quebec" match "Québec".
 export const normalize = (text: string) =>
@@ -37,7 +35,7 @@ export function useSlashFocus(input: RefObject<HTMLInputElement | null>) {
 type Props = { filter: Filter; onChange: (filter: Filter) => void };
 
 export default function FilterControls({ filter, onChange }: Props) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const searchInput = useRef<HTMLInputElement>(null);
   useSlashFocus(searchInput);
 
@@ -48,8 +46,10 @@ export default function FilterControls({ filter, onChange }: Props) {
         onChange={(event) => onChange({ ...filter, province: event.target.value })}
       >
         <option value="">{t("All provinces", "Toutes les provinces")}</option>
-        {PROVINCES.map((code) => (
-          <option key={code}>{code}</option>
+        {PROVINCES.map((province) => (
+          <option key={province.code} value={province.code}>
+            {province.label[lang]}
+          </option>
         ))}
       </select>
       <input

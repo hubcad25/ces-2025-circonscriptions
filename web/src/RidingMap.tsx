@@ -3,11 +3,12 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { FeatureCollection, MultiPolygon } from "geojson";
 import { type Lang, type Text, useLang } from "./i18n";
+import { provinceLabel } from "./provinces";
 import { HIGH, LOW } from "./questions";
 import { useEffect, useRef, useState } from "react";
 
 // MapLibre fetches files from a web worker, where only absolute URLs resolve.
-const dataUrl = (name: string) =>
+export const dataUrl = (name: string) =>
   new URL(`${import.meta.env.BASE_URL}data/${name}`, window.location.href).href;
 
 // MapLibre 6 ships its web worker as a separate file that the bundler must serve.
@@ -29,13 +30,13 @@ const CITIES: { name: Text; bounds: maplibregl.LngLatBoundsLike }[] = [
 
 const FIT_PADDING = 16;
 
-const BACKGROUND = "#15171a";
+export const BACKGROUND = "#15171a";
 const LOW_COLOR = "#eef0f2";
 const FILTERED_OUT_COLOR = "#2a2d31";
 
 // A minimal style: only city and town names come from OpenFreeMap (free vector tiles, no API
 // key), so that zooming in does not bring roads, buildings or parks.
-const STYLE: maplibregl.StyleSpecification = {
+export const STYLE: maplibregl.StyleSpecification = {
   version: 8,
   glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   sources: {
@@ -267,12 +268,13 @@ function popupCard(
   name: string,
   riding: Located | undefined,
   comparison: Comparison | undefined,
+  lang: Lang,
   t: (en: string, fr: string) => string,
 ): HTMLElement {
   const lines: [string, string][] = riding
     ? [
         ["map-card-name", name],
-        ["map-card-meta", riding.province],
+        ["map-card-meta", provinceLabel(riding.province, lang)],
         ["map-card-value", formatValue(riding.estimate_mean, comparison)],
         [
           "map-card-meta",
@@ -297,12 +299,6 @@ function popupCard(
   return card;
 }
 
-const hoverFilter = (fed23: number | null): maplibregl.FilterSpecification => [
-  "==",
-  ["get", "fed23"],
-  fed23 ?? -1,
-];
-
 async function addLayers(map: maplibregl.Map) {
   const canada: FeatureCollection = await (await fetch(dataUrl("canada.geojson"))).json();
 
@@ -326,8 +322,13 @@ async function addLayers(map: maplibregl.Map) {
     id: "hover",
     type: "line",
     source: "ridings",
-    filter: hoverFilter(null),
-    paint: { "line-color": "#ffffff", "line-width": 2 },
+    // A feature state changes on the GPU right away; a filter would re-cut the tiles in the
+    // worker, so the outline would trail behind the mouse.
+    paint: {
+      "line-color": "#ffffff",
+      "line-width": 2,
+      "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0],
+    },
   });
   map.addLayer({
     id: "places",
@@ -354,7 +355,7 @@ async function addLayers(map: maplibregl.Map) {
 }
 
 // OpenFreeMap names places in many languages; "name" is the local name.
-const cityLabel = (lang: Lang): maplibregl.ExpressionSpecification => [
+export const cityLabel = (lang: Lang): maplibregl.ExpressionSpecification => [
   "coalesce",
   ["get", `name:${lang}`],
   ["get", "name"],
@@ -404,23 +405,23 @@ export default function RidingMap({ ridings, color, comparison }: Props) {
     });
 
     let hovered: number | null = null;
+    const setHover = (fed23: number | null) => {
+      if (hovered !== null) instance.setFeatureState({ source: "ridings", id: hovered }, { hover: false });
+      if (fed23 !== null) instance.setFeatureState({ source: "ridings", id: fed23 }, { hover: true });
+      hovered = fed23;
+    };
+    // The card follows the pointer itself; it is only rebuilt when the riding changes.
     instance.on("mousemove", "fill", (event) => {
       const { fed23, fed23_name } = event.features![0].properties;
-      if (fed23 !== hovered) {
-        hovered = fed23;
-        instance.setFilter("hover", hoverFilter(fed23));
-      }
-      const { ridings, comparison, t } = latest.current;
+      if (fed23 === hovered) return;
+      setHover(fed23);
+      const { ridings, comparison, lang, t } = latest.current;
       const riding = ridings.find((candidate) => candidate.fed23 === fed23);
       instance.getCanvas().style.cursor = "pointer";
-      popup
-        .setLngLat(event.lngLat)
-        .setDOMContent(popupCard(fed23_name, riding, comparison, t))
-        .addTo(instance);
+      popup.setDOMContent(popupCard(fed23_name, riding, comparison, lang, t)).trackPointer().addTo(instance);
     });
     instance.on("mouseleave", "fill", () => {
-      hovered = null;
-      instance.setFilter("hover", hoverFilter(null));
+      setHover(null);
       instance.getCanvas().style.cursor = "";
       popup.remove();
     });

@@ -1,6 +1,7 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useEffect, useRef, useState } from "react";
 import { normalize, useSlashFocus } from "./filters";
+import { useLang } from "./i18n";
 import namesQuery from "./riding_names.sql?raw";
 
 type Riding = { fed23: number; fed23_name: string };
@@ -15,6 +16,7 @@ async function loadRidings(con: AsyncDuckDBConnection): Promise<Riding[]> {
 // Typing filters the riding names; the arrow keys move through the matches, Enter opens the
 // highlighted one and Escape clears the box.
 export default function RidingSearch({ con }: { con: AsyncDuckDBConnection }) {
+  const { t } = useLang();
   const input = useRef<HTMLInputElement>(null);
   const [ridings, setRidings] = useState<Riding[]>([]);
   const [search, setSearch] = useState("");
@@ -45,7 +47,7 @@ export default function RidingSearch({ con }: { con: AsyncDuckDBConnection }) {
       <input
         ref={input}
         type="search"
-        placeholder="Go to another riding (press /)"
+        placeholder={t("Go to another riding (press /)", "Aller à une autre circonscription (appuyez sur /)")}
         value={search}
         onChange={(event) => {
           setSearch(event.target.value);

@@ -178,6 +178,12 @@ main:has(.explore) {
   padding: 16px 0 12px;
 }
 
+.intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .toolbar .controls {
   align-items: center;
   margin-bottom: 0;
@@ -343,49 +349,29 @@ td {
   fill: var(--text);
 }
 
-.riding-chart .track {
-  stroke: var(--border);
-  stroke-width: 1;
-  stroke-dasharray: 2 3;
-}
 
-.riding-chart .row-label {
-  fill: var(--muted);
-  font-size: 13px;
-}
 
 .riding-chart .maple-leaf {
   fill: #d52b1e;
 }
 
 .riding-chart text {
-  font-size: 14px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
 .riding-chart .label-mean {
   fill: var(--text);
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
 }
 
-.riding-chart-axis {
-  display: block;
-  margin-top: 4px;
-}
 
-.riding-chart-axis text {
-  fill: var(--muted);
-  font-size: 13px;
-}
 
 .riding-chart .label-reference {
   fill: var(--text);
 }
 
-.riding-chart .label-bound {
-  fill: var(--muted);
-}
 
 .national-value {
   color: var(--muted);
@@ -729,16 +715,7 @@ main:has(.map-wrap) {
   margin-top: 2rem;
 }
 
-.similar details {
-  margin-bottom: 1rem;
-}
 
-.similar .weight {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-}
 
 .about {
   max-width: 640px;
@@ -829,4 +806,293 @@ main:has(.map-wrap) {
   .lang-toggle {
     margin: 0 0 0 auto;
   }
+}
+
+.profile {
+  margin-bottom: 32px;
+}
+
+.profile-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 32px;
+}
+
+.profile ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.standout {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.standout:hover {
+  border-color: var(--muted);
+}
+
+.standout-question {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.standout-lean {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.standout-lean strong {
+  color: var(--party);
+}
+
+.scale-bar {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.scale-bar .track,
+.scale-bar .tick {
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.scale-bar .range {
+  fill: var(--party);
+  opacity: 0.3;
+}
+
+.scale-bar .mean {
+  fill: var(--party);
+}
+
+.scale-bar .reference {
+  fill: none;
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.standout-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.similar-list {
+  margin: 0;
+  padding-left: 24px;
+  line-height: 1.8;
+}
+
+p.legend-caption {
+  margin-top: 8px;
+  padding-left: 0;
+}
+
+.profile h3,
+.similar h3 {
+  margin: 8px 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Page sections of the riding page, set apart by a rule above their title. */
+.profile h2,
+#answers,
+.similar h2 {
+  margin: 40px 0 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 20px;
+}
+
+.profile-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.key-mean,
+.key-reference {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.key-mean {
+  background: var(--muted);
+}
+
+.key-reference {
+  margin-left: 12px;
+  border: 2px solid var(--text);
+}
+
+.controls-label {
+  align-self: center;
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.similar-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+main:has(.riding-page) {
+  max-width: 1400px;
+}
+
+.riding-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+.riding-header h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.minimap {
+  margin: 0;
+}
+
+.minimap-map {
+  width: 480px;
+  max-width: 100%;
+  height: 280px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.minimap figcaption {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 16px -24px 0;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.section-nav button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.section-nav button:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.profile h3 .muted {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Leaves room for the sticky section bar when a section is scrolled to. */
+#standouts,
+#answers,
+#similar {
+  scroll-margin-top: 56px;
+}
+
+
+
+/* The section bar's border already sits right above the first section. */
+.profile h2 {
+  margin-top: 24px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.facets {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+/* Titles share one height so that the charts below them line up with the row names. */
+.facet-title {
+  display: flex;
+  align-items: flex-end;
+  height: 40px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--party);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.facet:first-child .facet-title {
+  height: 56px;
+  border-bottom: none;
+}
+
+.riding-chart .track {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.riding-chart .row-label {
+  fill: var(--muted);
+  font-size: 13px;
+}
+
+.riding-chart .label-bound {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.riding-chart-axis {
+  display: block;
+  margin-top: 0;
+}
+
+.riding-chart-axis text {
+  fill: var(--muted);
+  font-size: 12px;
 }

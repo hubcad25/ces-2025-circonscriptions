@@ -4,6 +4,7 @@ import EstimateTable, { type Estimate } from "./EstimateTable";
 import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
 import { type Text, useLang } from "./i18n";
+import { provinceLabel } from "./provinces";
 import { type Category, HIGH, OFFICIAL_RESULTS, type Question, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import resultsQuery from "./results.sql?raw";
@@ -29,7 +30,7 @@ const defaultDisplay = (question: Question): Display =>
   question.isOrdinal ? "canada" : "detailed";
 
 function displayCategories(question: Question, display: Display): Category[] {
-  if (display === "canada") return [{ code: "mean", label: "Mean answer", color: HIGH }];
+  if (display === "canada") return [{ code: "mean", label: { en: "Mean answer", fr: "Réponse moyenne" }, color: HIGH }];
   if (display === "grouped") return question.groups!;
   return question.categories;
 }
@@ -73,7 +74,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
   }
 
   // Ridings are compared with their province when one is chosen, with Canada otherwise.
-  const referenceName = filter.province || "Canada";
+  const referenceName = filter.province ? provinceLabel(filter.province, lang) : "Canada";
   const reference = filter.province
     ? allEstimates.find((estimate) => estimate.province === filter.province)?.provincial
     : allEstimates[0]?.national;
@@ -85,11 +86,11 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
         ? {
             reference,
             referenceName,
-            scaleLabels: question.categories.map((option) => option.label),
-            ends: question.ends!,
+            scaleLabels: question.categories.map((option) => option.label[lang]),
+            ends: [question.ends![0][lang], question.ends![1][lang]] as [string, string],
           }
         : undefined,
-    [display, question, reference, referenceName],
+    [display, question, reference, referenceName, lang],
   );
 
   const estimates = allEstimates.filter((estimate) => matches(estimate, filter));
@@ -99,6 +100,13 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
   return (
     <div className="explore" style={{ "--party": category.color } as CSSProperties}>
       <div className="toolbar">
+        <p className="intro">
+          {t(
+            "Estimates for all 343 ridings, from the 2025 Canadian Election Study.",
+            "Estimations pour les 343 circonscriptions, d'après l'Étude électorale canadienne 2025.",
+          )}{" "}
+          <a href="#/about">{t("How it works →", "Comment ça marche →")}</a>
+        </p>
         <div className="controls">
           <QuestionSelect value={question} onChange={(next) => choose(next, defaultDisplay(next))} />
           <span className="spacer" />
@@ -139,7 +147,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
                 aria-pressed={option.code === category.code}
                 onClick={() => setCategory(option)}
               >
-                {option.label}
+                {option.label[lang]}
               </button>
             ))}
           <span className="spacer" />
