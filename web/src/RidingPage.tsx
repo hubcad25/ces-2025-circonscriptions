@@ -1,13 +1,22 @@
 import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
-import { type CSSProperties, useEffect, useState } from "react";
-import RidingChart, { RidingChartAxis } from "./RidingChart";
-import { type Category, QUESTIONS } from "./questions";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
+import RidingChart, {
+  chartWidth,
+  LABEL_WIDTH,
+  RidingChartAxis,
+  RidingChartLabels,
+} from "./RidingChart";
+import RidingMinimap from "./RidingMinimap";
+import RidingProfile from "./RidingProfile";
+import { useLang } from "./i18n";
+import { provinceName } from "./provinces";
+import { type Category, type Question, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import ridingQuery from "./riding.sql?raw";
 import RidingSearch from "./RidingSearch";
 import SimilarRidings from "./SimilarRidings";
 
-type Estimate = {
+export type Estimate = {
   question: string;
   category: string;
   fed23_name: string;
@@ -29,57 +38,124 @@ async function loadEstimates(con: AsyncDuckDBConnection, fed23: number): Promise
   return result.toArray().map((row) => row.toJSON() as Estimate);
 }
 
-type TableProps = { categories: Category[]; estimates: Estimate[] };
+type ChartProps = { categories: Category[]; estimates: Estimate[] };
 
-// Every estimate is written on the chart; the table only adds the official result.
-function QuestionTable({ categories, estimates }: TableProps) {
-  const hasResults = estimates.some((estimate) => estimate.actual_share !== null);
-  return (
-    <table>
-      <thead>
-        <tr>
-          <th>Answer</th>
-          <th>
-            Riding estimate and 90% interval (%)
-            <RidingChartAxis />
-          </th>
-          {hasResults && <th className="number">Result %</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {categories.map((category) => {
-          const estimate = estimates.find((row) => row.category === category.code);
-          if (!estimate) return null;
-          return (
-            <tr key={category.code} style={{ "--party": category.color } as CSSProperties}>
-              <td>{category.label}</td>
-              <td>
-                <RidingChart
-                  low={estimate.estimate_low}
-                  mean={estimate.estimate_mean}
-                  high={estimate.estimate_high}
-                  actual={estimate.actual_share}
-                  national={estimate.national_share}
-                  provincial={estimate.provincial_share}
-                  province={estimate.province}
-                />
-              </td>
-              {hasResults && (
-                <td className="number">
-                  {estimate.actual_share === null ? "no candidate" : percent(estimate.actual_share)}
-                </td>
-              )}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+// Must match the gap of .facets in the styles.
+const FACET_GAP = 12;
+const MIN_PLOT_WIDTH = 110;
+
+// One chart per answer, in scale order from left to right, sharing the width of the page.
+function QuestionCharts({ categories, estimates }: ChartProps) {
+  const { lang } = useLang();
+  const container = useRef<HTMLDivElement>(null);
+  const [available, setAvailable] = useState(0);
+
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setAvailable(entry.contentRect.width));
+    observer.observe(container.current!);
+    return () => observer.disconnect();
+  }, []);
+
+  const shown = categories.filter((category) =>
+    estimates.some((row) => row.category === category.code),
   );
+  const perChart = (available - LABEL_WIDTH) / shown.length - FACET_GAP;
+  // On a narrow screen the charts no longer fit side by side: they stack, each with its own
+  // row names and the full width.
+  const isStacked = perChart - chartWidth(0) < MIN_PLOT_WIDTH;
+  const plotWidth = isStacked
+    ? Math.max(MIN_PLOT_WIDTH, available - LABEL_WIDTH - chartWidth(0))
+    : perChart - chartWidth(0);
+
+  const labels = shown.length > 0 && (
+    <RidingChartLabels
+      ridingName={estimates[0].fed23_name}
+      provinceName={provinceName(estimates[0].province, lang)}
+    />
+  );
+
+  return (
+    <div className={isStacked ? "facets stacked" : "facets"} ref={container}>
+      {!isStacked && labels && (
+        <div className="facet">
+          <div className="facet-title" />
+          {labels}
+        </div>
+      )}
+      {shown.map((category) => {
+        const estimate = estimates.find((row) => row.category === category.code)!;
+        const chart = (
+          <div>
+            <RidingChartAxis plotWidth={plotWidth} />
+            <RidingChart
+              plotWidth={plotWidth}
+              low={estimate.estimate_low}
+              mean={estimate.estimate_mean}
+              high={estimate.estimate_high}
+              actual={estimate.actual_share}
+              national={estimate.national_share}
+              provincial={estimate.provincial_share}
+            />
+          </div>
+        );
+        return (
+          <div
+            key={category.code}
+            className="facet"
+            style={{ "--party": category.color } as CSSProperties}
+          >
+            <div className="facet-title">{category.label[lang]}</div>
+            {isStacked ? (
+              <div className="facet-row">
+                <div className="facet-labels">{labels}</div>
+                {chart}
+              </div>
+            ) : (
+              chart
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// The vote is the only answer with a known truth: a footnote that checks the model in this riding.
+function ModelCheck({ estimates }: { estimates: Estimate[] }) {
+  const { t } = useLang();
+  const votes = estimates.filter((row) => row.question === "vote_post" && row.actual_share !== null);
+  if (votes.length === 0) return null;
+  const inside = votes.filter(
+    (row) => row.estimate_low <= row.actual_share! && row.actual_share! <= row.estimate_high,
+  );
+  const gap = (row: Estimate) => row.estimate_mean - row.actual_share!;
+  const worst = votes.reduce((a, b) => (Math.abs(gap(b)) > Math.abs(gap(a)) ? b : a));
+  const signed = `${gap(worst) > 0 ? "+" : ""}${percent(gap(worst))}`;
+  return (
+    <p className="note">
+      {t(
+        `Model check: the official 2025 vote falls inside the 90% interval for ${inside.length} of ${votes.length} parties (largest gap: ${worst.category}, ${signed} pts).`,
+        `Validation : le vote officiel de 2025 tombe dans l'intervalle à 90 % pour ${inside.length} partis sur ${votes.length} (plus grand écart : ${worst.category}, ${signed} pts).`,
+      )}
+    </p>
+  );
+}
+
+// Buttons rather than links: the hash already holds the page route.
+const SECTIONS: { id: string; label: [string, string] }[] = [
+  { id: "standouts", label: ["What stands out", "Ce qui se démarque"] },
+  { id: "answers", label: ["Answers by question", "Réponses par question"] },
+  { id: "similar", label: ["Similar and different ridings", "Circonscriptions semblables et différentes"] },
+];
+
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
 type Props = { con: AsyncDuckDBConnection; fed23: number };
 
 export default function RidingPage({ con, fed23 }: Props) {
+  const { lang, t } = useLang();
   const [estimates, setEstimates] = useState<Estimate[] | null>(null);
   const [question, setQuestion] = useState(QUESTIONS[0]);
   // Grouped answers are easier to read; questions without groups ignore this choice.
@@ -89,19 +165,41 @@ export default function RidingPage({ con, fed23 }: Props) {
     loadEstimates(con, fed23).then(setEstimates);
   }, [con, fed23]);
 
-  if (estimates === null) return <p className="subtitle">Loading riding...</p>;
-  if (estimates.length === 0) return <p className="subtitle">Unknown riding {fed23}.</p>;
+  // A card of the profile opens its question in the answers section.
+  function showQuestion(next: Question) {
+    setQuestion(next);
+    scrollToSection("answers");
+  }
+
+  if (estimates === null) return <p className="subtitle">{t("Loading riding...", "Chargement...")}</p>;
+  if (estimates.length === 0) {
+    return <p className="subtitle">{t(`Unknown riding ${fed23}.`, `Circonscription ${fed23} inconnue.`)}</p>;
+  }
 
   return (
-    <>
+    <div className="riding-page">
       <div className="riding-nav">
         <a className="back" href="#/">
-          ← All ridings
+          {t("← All ridings", "← Toutes les circonscriptions")}
         </a>
         <RidingSearch con={con} />
       </div>
-      <h1>{estimates[0].fed23_name}</h1>
-      <p className="subtitle">Riding {fed23}, 2023 boundaries.</p>
+      <header className="riding-header">
+        <RidingMinimap fed23={fed23} />
+        <div>
+          <h1>{estimates[0].fed23_name}</h1>
+          <p className="subtitle">{provinceName(estimates[0].province, lang)}</p>
+        </div>
+      </header>
+      <nav className="section-nav">
+        {SECTIONS.map((section) => (
+          <button key={section.id} onClick={() => scrollToSection(section.id)}>
+            {t(...section.label)}
+          </button>
+        ))}
+      </nav>
+      <RidingProfile estimates={estimates} onSelect={showQuestion} />
+      <h2 id="answers">{t("Answers by question", "Réponses par question")}</h2>
       <div className="controls">
         <QuestionSelect value={question} onChange={setQuestion} />
         {question.groups && (
@@ -114,21 +212,24 @@ export default function RidingPage({ con, fed23 }: Props) {
                 aria-pressed={option === isGrouped}
                 onClick={() => setGrouped(option)}
               >
-                {option ? "Grouped" : "Detailed"}
+                {option ? t("Grouped", "Regroupé") : t("Detailed", "Détaillé")}
               </button>
             ))}
           </>
         )}
       </div>
-      <QuestionTable
+      <QuestionCharts
         categories={isGrouped && question.groups ? question.groups : question.categories}
         estimates={estimates.filter((estimate) => estimate.question === question.code)}
       />
-      <ul className="legend-caption">
-        <li>Riding row: the riding's estimate (dot) and its 90% interval (bar), with the official result as a white line for the vote.</li>
-        <li>Rows below: the same answer for {estimates[0].province} as a whole (white dot) and for Canada (red maple leaf).</li>
-      </ul>
+      <p className="legend-caption">
+        {t(
+          "One chart per answer. First row: the riding's estimate (dot) and its 90% interval (bar), with the official result as a white line for the vote. Below: the province (white dot) and Canada (maple leaf). Values in %.",
+          "Un graphique par réponse. Première ligne : l'estimation de la circonscription (point) et son intervalle à 90 % (barre), avec le résultat officiel en trait blanc pour le vote. Dessous : la province (point blanc) et le Canada (feuille d'érable). Valeurs en %.",
+        )}
+      </p>
       <SimilarRidings con={con} fed23={fed23} />
-    </>
+      <ModelCheck estimates={estimates} />
+    </div>
   );
 }

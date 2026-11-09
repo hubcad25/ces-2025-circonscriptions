@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useLang } from "./i18n";
 import IntervalBar, { IntervalAxis } from "./IntervalBar";
+import { provinceLabel } from "./provinces";
 
 export type Estimate = {
   fed23: number;
@@ -19,6 +21,7 @@ type Props = { estimates: Estimate[]; isOfficial: boolean; topRank?: number };
 
 // An official result is a count, not an estimate: it is shown without an interval.
 export default function EstimateTable({ estimates, isOfficial, topRank }: Props) {
+  const { lang, t } = useLang();
   const percent = (value: number) =>
     topRank === undefined ? (100 * value).toFixed(1) : value.toFixed(2);
 
@@ -45,14 +48,22 @@ export default function EstimateTable({ estimates, isOfficial, topRank }: Props)
       <table>
         <thead>
           <tr>
-            <th onClick={() => sortBy("fed23_name")}>Riding{arrow("fed23_name")}</th>
+            <th onClick={() => sortBy("fed23_name")}>
+              {t("Riding", "Circonscription")}
+              {arrow("fed23_name")}
+            </th>
             <th className="center" onClick={() => sortBy("estimate_mean")}>
-              {isOfficial ? "Result %" : topRank !== undefined ? `Mean (1 to ${topRank})` : "MRP %"}
+              {isOfficial
+                ? t("Result %", "Résultat %")
+                : topRank !== undefined
+                  ? t(`Mean (1 to ${topRank})`, `Moyenne (1 à ${topRank})`)
+                  : "MRP %"}
               {arrow("estimate_mean")}
             </th>
             {!isOfficial && (
               <th className="wide-only">
-                90% interval{topRank === undefined && " (%)"}
+                {t("90% interval", "Intervalle à 90 %")}
+                {topRank === undefined && " (%)"}
                 <IntervalAxis topRank={topRank} />
               </th>
             )}
@@ -63,7 +74,7 @@ export default function EstimateTable({ estimates, isOfficial, topRank }: Props)
             <tr key={estimate.fed23}>
               <td>
                 <a href={`#/riding/${estimate.fed23}`}>{estimate.fed23_name}</a>{" "}
-                <span className="province">{estimate.province}</span>
+                <span className="province">{provinceLabel(estimate.province, lang)}</span>
               </td>
               {isOfficial ? (
                 <td className="center">{percent(estimate.estimate_mean)}</td>

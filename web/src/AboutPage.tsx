@@ -1,4 +1,6 @@
-export default function AboutPage() {
+import { useLang } from "./i18n";
+
+function AboutEnglish() {
   return (
     <div className="about">
       <h1>About</h1>
@@ -75,4 +77,90 @@ export default function AboutPage() {
       </p>
     </div>
   );
+}
+
+function AboutFrench() {
+  return (
+    <div className="about">
+      <h1>À propos</h1>
+      <p className="subtitle">Ce que montre ce site, comment il a été fait et à quel point s'y fier.</p>
+
+      <h2>C'est quoi ?</h2>
+      <p>
+        Des estimations du vote de 2025 dans chacune des 343 circonscriptions du Canada, et de ce
+        que les gens y pensent sur 37 questions politiques : logement, États-Unis, immigration,
+        démocratie, et plus.
+      </p>
+      <p>
+        Elles viennent de l'<a href="https://doi.org/10.7910/DVN/2YAQ8D">Étude électorale
+        canadienne 2025</a>, un grand sondage universitaire auprès d'environ 20 000 Canadiens.
+      </p>
+
+      <h2>Ce n'est pas trop peu de monde par circonscription ?</h2>
+      <p>
+        Oui. Ça fait environ 58 répondants par circonscription, parfois moins de 10. En faire
+        directement la moyenne donnerait des chiffres très bruités.
+      </p>
+      <p>
+        Le site utilise donc une méthode appelée MRP (régression multiniveau et
+        poststratification). En mots simples :
+      </p>
+      <ol>
+        <li>
+          Un modèle apprend comment les réponses varient selon l'âge, le genre, la scolarité, la
+          langue maternelle, le vote de 2021, la province et quelques traits de la circonscription.
+        </li>
+        <li>Le recensement dit combien de gens de chaque profil vivent dans chaque circonscription.</li>
+        <li>
+          L'estimation d'une circonscription est la réponse du modèle pour chaque profil, pondérée
+          par le nombre de gens de ce profil qui y vivent.
+        </li>
+      </ol>
+      <p>
+        Une circonscription avec peu de répondants s'appuie sur des gens semblables ailleurs. Les
+        estimations sont donc stables, mais elles sont aussi tirées vers ce qui est typique pour
+        des gens comme ses habitants.
+      </p>
+
+      <h2>C'est précis à quel point ?</h2>
+      <p>
+        Le vote est la seule question qu'on peut comparer à la réalité. Par rapport aux résultats
+        officiels de 2025, les estimations s'écartent d'environ 4 points en moyenne. L'onglet{" "}
+        <a href="#/validation">Validation</a> montre chaque circonscription.
+      </p>
+      <p>
+        Chaque estimation vient avec un intervalle de 90 %. Les intervalles bruts du modèle
+        étaient trop étroits : ils ont été élargis jusqu'à concorder avec les résultats du vote.
+        On suppose que les attitudes sont aussi fiables que le vote, ce qu'on ne peut pas vérifier.
+      </p>
+
+      <h2>Limites connues</h2>
+      <ul>
+        <li>
+          Les gens dont la langue maternelle n'est ni l'anglais ni le français sont
+          sous-représentés dans le sondage (7 % des répondants, 23 % des adultes).
+        </li>
+        <li>
+          Une circonscription qui se distingue des autres au profil semblable, pour des raisons
+          locales, sera lissée.
+        </li>
+        <li>
+          De petits écarts entre deux circonscriptions ne veulent souvent rien dire. Regardez les
+          intervalles.
+        </li>
+      </ul>
+
+      <h2>Qui a fait ça ?</h2>
+      <p>
+        Hubert Cadieux. Le code et les sources de données sont sur{" "}
+        <a href="https://github.com/hubcad25/ces-2025-circonscriptions">GitHub</a>. C'est un projet
+        indépendant, sans lien avec l'équipe de l'Étude électorale canadienne.
+      </p>
+    </div>
+  );
+}
+
+export default function AboutPage() {
+  const { lang } = useLang();
+  return lang === "fr" ? <AboutFrench /> : <AboutEnglish />;
 }
