@@ -23,7 +23,7 @@ const COLUMNS: { key: SortKey; label: Text; className?: string }[] = [
   { key: "estimate_mean", label: { en: "MRP %", fr: "MRP %" }, className: "center" },
   { key: "actual_share", label: { en: "Result %", fr: "Résultat %" }, className: "number" },
   { key: "gap", label: { en: "Gap (pts)", fr: "Écart (pts)" }, className: "number" },
-  { key: "is_covered", label: { en: "Interval", fr: "Intervalle" } },
+  { key: "is_covered", label: { en: "In interval", fr: "Dans l'intervalle" } },
 ];
 
 const percent = (share: number) => (100 * share).toFixed(1);
@@ -97,7 +97,7 @@ export default function RidingTable({ ridings }: { ridings: Riding[] }) {
                 {signed(riding.gap)}
               </td>
               <td className={riding.is_covered ? undefined : "miss"}>
-                {riding.is_covered ? t("inside", "dedans") : t("outside", "dehors")}
+                {riding.is_covered ? t("yes", "oui") : t("no", "non")}
               </td>
               <td className="wide-only">
                 <IntervalBar
