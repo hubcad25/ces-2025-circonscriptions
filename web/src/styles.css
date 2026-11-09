@@ -644,3 +644,25 @@ main:has(.map-wrap) {
     min-height: 0;
   }
 }
+
+.lang-toggle {
+  margin-top: 16px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lang-toggle:hover {
+  color: var(--text);
+}
+
+@media (max-width: 700px) {
+  .lang-toggle {
+    margin: 0 0 0 auto;
+  }
+}

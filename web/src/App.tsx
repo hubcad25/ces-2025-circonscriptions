@@ -3,13 +3,14 @@ import { useEffect, useState } from "react";
 import AboutPage from "./AboutPage";
 import { openDatabase } from "./duckdb";
 import ExplorePage from "./ExplorePage";
+import { type Lang, LangContext, initialLang, saveLang } from "./i18n";
 import RidingPage from "./RidingPage";
 import ValidationPage from "./ValidationPage";
 
 const TABS = [
-  { hash: "#/", label: "Explore" },
-  { hash: "#/validation", label: "Validation" },
-  { hash: "#/about", label: "About" },
+  { hash: "#/", label: { en: "Explore", fr: "Explorer" } },
+  { hash: "#/validation", label: { en: "Validation", fr: "Validation" } },
+  { hash: "#/about", label: { en: "About", fr: "À propos" } },
 ];
 
 function Page({ con, hash }: { con: AsyncDuckDBConnection; hash: string }) {
@@ -23,6 +24,9 @@ function Page({ con, hash }: { con: AsyncDuckDBConnection; hash: string }) {
 export default function App() {
   const [con, setCon] = useState<AsyncDuckDBConnection | null>(null);
   const [hash, setHash] = useState(window.location.hash || "#/");
+  const [lang, setLang] = useState<Lang>(initialLang);
+
+  useEffect(() => saveLang(lang), [lang]);
 
   useEffect(() => {
     openDatabase().then(setCon);
@@ -36,18 +40,29 @@ export default function App() {
   }, []);
 
   return (
-    <div className="layout">
-      <nav className="sidebar">
-        <div className="sidebar-title">What Your Riding Thinks</div>
-        {TABS.map((tab) => (
-          <a key={tab.hash} href={tab.hash} aria-current={tab.hash === hash ? "page" : undefined}>
-            {tab.label}
-          </a>
-        ))}
-      </nav>
-      <main>
-        {con === null ? <p className="subtitle">Loading data...</p> : <Page con={con} hash={hash} />}
-      </main>
-    </div>
+    <LangContext.Provider value={lang}>
+      <div className="layout">
+        <nav className="sidebar">
+          <div className="sidebar-title">
+            {lang === "fr" ? "Ce que pense votre circonscription" : "What Your Riding Thinks"}
+          </div>
+          {TABS.map((tab) => (
+            <a key={tab.hash} href={tab.hash} aria-current={tab.hash === hash ? "page" : undefined}>
+              {tab.label[lang]}
+            </a>
+          ))}
+          <button className="lang-toggle" onClick={() => setLang(lang === "fr" ? "en" : "fr")}>
+            {lang === "fr" ? "English" : "Français"}
+          </button>
+        </nav>
+        <main>
+          {con === null ? (
+            <p className="subtitle">{lang === "fr" ? "Chargement des données..." : "Loading data..."}</p>
+          ) : (
+            <Page con={con} hash={hash} />
+          )}
+        </main>
+      </div>
+    </LangContext.Provider>
   );
 }
