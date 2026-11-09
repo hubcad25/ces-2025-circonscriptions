@@ -3,6 +3,7 @@ import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import EstimateTable, { type Estimate } from "./EstimateTable";
 import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
+import { type Text, useLang } from "./i18n";
 import { type Category, HIGH, OFFICIAL_RESULTS, type Question, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import resultsQuery from "./results.sql?raw";
@@ -11,9 +12,9 @@ import RidingMap from "./RidingMap";
 type Display = "grouped" | "detailed" | "canada";
 
 // The "canada" display is labelled with its reference, Canada or the chosen province.
-const DISPLAY_LABELS: Record<Exclude<Display, "canada">, string> = {
-  grouped: "Grouped",
-  detailed: "Detailed",
+const DISPLAY_LABELS: Record<Exclude<Display, "canada">, Text> = {
+  grouped: { en: "Grouped", fr: "Regroupé" },
+  detailed: { en: "Detailed", fr: "Détaillé" },
 };
 
 // "vs Canada" compares each riding's mean answer with the national mean, or the provincial
@@ -48,6 +49,7 @@ async function loadEstimates(
 }
 
 export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
+  const { lang, t } = useLang();
   const [question, setQuestion] = useState(QUESTIONS[0]);
   const [display, setDisplay] = useState<Display>(() => defaultDisplay(QUESTIONS[0]));
   // A function, so that the first category is only computed once: with the current display
@@ -92,69 +94,77 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
 
   const estimates = allEstimates.filter((estimate) => matches(estimate, filter));
 
+  const categories = displayCategories(question, display);
+
   return (
-    <div style={{ "--party": category.color } as CSSProperties}>
-      <h1>Explore the estimates</h1>
-      <p className="subtitle">MRP estimates by riding from the Canadian Election Study.</p>
-      <div className="controls">
-        <QuestionSelect value={question} onChange={(next) => choose(next, defaultDisplay(next))} />
-        <span className="spacer" />
-        {(["map", "table"] as const).map((option) => (
-          <button
-            key={option}
-            className="wave"
-            aria-pressed={option === view}
-            onClick={() => setView(option)}
-          >
-            {option === "map" ? "Map" : "Table"}
-          </button>
-        ))}
-      </div>
-      {displays(question).length > 1 && (
+    <div className="explore" style={{ "--party": category.color } as CSSProperties}>
+      <div className="toolbar">
         <div className="controls">
-          {displays(question).map((option) => (
-            <button
-              key={option}
-              className="wave"
-              aria-pressed={option === display}
-              onClick={() => choose(question, option)}
-            >
-              {option === "canada" ? `Average vs ${referenceName}` : DISPLAY_LABELS[option]}
-            </button>
-          ))}
+          <QuestionSelect value={question} onChange={(next) => choose(next, defaultDisplay(next))} />
+          <span className="spacer" />
+          <div className="segmented">
+            {(["map", "table"] as const).map((option) => (
+              <button
+                key={option}
+                className="wave"
+                aria-pressed={option === view}
+                onClick={() => setView(option)}
+              >
+                {option === "map" ? t("Map", "Carte") : t("Table", "Tableau")}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
-      <div className="controls">
-        {displayCategories(question, display).map((option) => (
-          <button
-            key={option.code}
-            aria-pressed={option.code === category.code}
-            onClick={() => setCategory(option)}
-          >
-            {option.label}
-          </button>
-        ))}
-        <FilterControls filter={filter} onChange={setFilter} />
+        <div className="controls">
+          {displays(question).length > 1 && (
+            <div className="segmented">
+              {displays(question).map((option) => (
+                <button
+                  key={option}
+                  className="wave"
+                  aria-pressed={option === display}
+                  onClick={() => choose(question, option)}
+                >
+                  {option === "canada"
+                    ? t(`Average vs ${referenceName}`, `Moyenne vs ${referenceName}`)
+                    : DISPLAY_LABELS[option][lang]}
+                </button>
+              ))}
+            </div>
+          )}
+          {categories.length > 1 &&
+            categories.map((option) => (
+              <button
+                key={option.code}
+                aria-pressed={option.code === category.code}
+                onClick={() => setCategory(option)}
+              >
+                {option.label}
+              </button>
+            ))}
+          <span className="spacer" />
+          <FilterControls filter={filter} onChange={setFilter} />
+        </div>
       </div>
-      {estimates.length === 0 ? (
-        <p className="stats">No riding matches.</p>
-      ) : view === "map" ? (
-        <RidingMap
-          title={question.label}
-          ridings={estimates}
-          color={category.color}
-          comparison={comparison}
-        />
-      ) : (
-        <>
-          <h2 className="question">{question.label}</h2>
+      <div className="explore-body">
+        {allEstimates.length === 0 ? (
+          <p className="stats">{t("Loading...", "Chargement...")}</p>
+        ) : estimates.length === 0 ? (
+          <p className="stats">{t("No riding matches.", "Aucune circonscription ne correspond.")}</p>
+        ) : view === "map" ? (
+          <RidingMap
+            ridings={estimates}
+            color={category.color}
+            comparison={comparison}
+          />
+        ) : (
           <EstimateTable
             estimates={estimates}
             isOfficial={question.code === OFFICIAL_RESULTS}
             topRank={display === "canada" ? question.categories.length : undefined}
           />
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

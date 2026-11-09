@@ -1,4 +1,5 @@
 import { type RefObject, useEffect, useRef } from "react";
+import { useLang } from "./i18n";
 
 // West to east, then the territories, as in most Canadian tables.
 const PROVINCES = ["BC", "AB", "SK", "MB", "ON", "QC", "NB", "NS", "PE", "NL", "YT", "NT", "NU"];
@@ -36,6 +37,7 @@ export function useSlashFocus(input: RefObject<HTMLInputElement | null>) {
 type Props = { filter: Filter; onChange: (filter: Filter) => void };
 
 export default function FilterControls({ filter, onChange }: Props) {
+  const { t } = useLang();
   const searchInput = useRef<HTMLInputElement>(null);
   useSlashFocus(searchInput);
 
@@ -45,7 +47,7 @@ export default function FilterControls({ filter, onChange }: Props) {
         value={filter.province}
         onChange={(event) => onChange({ ...filter, province: event.target.value })}
       >
-        <option value="">All provinces</option>
+        <option value="">{t("All provinces", "Toutes les provinces")}</option>
         {PROVINCES.map((code) => (
           <option key={code}>{code}</option>
         ))}
@@ -53,7 +55,7 @@ export default function FilterControls({ filter, onChange }: Props) {
       <input
         ref={searchInput}
         type="search"
-        placeholder="Search riding (press /)"
+        placeholder={t("Search riding (press /)", "Chercher une circonscription (appuyez sur /)")}
         value={filter.search}
         onChange={(event) => onChange({ ...filter, search: event.target.value })}
         onKeyDown={(event) => {

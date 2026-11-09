@@ -60,20 +60,6 @@ a:hover {
   line-height: 1.3;
 }
 
-/* Question on the left, legend on the right, just above the map. */
-.map-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px 32px;
-}
-
-.map-header .question {
-  max-width: 480px;
-  margin: 0;
-}
-
 .subtitle {
   margin: 0 0 24px;
   color: var(--muted);
@@ -132,6 +118,88 @@ a:hover {
   border-color: var(--party);
   background: var(--party);
   color: #ffffff;
+}
+
+/* Native select with its arrow redrawn, so that it reads as the page heading. */
+.controls .question-select {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: 0;
+  padding: 6px 36px 6px 12px;
+  appearance: none;
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239aa0a6' stroke-width='1.5'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  font-size: 17px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+/* Buttons side by side share their borders. */
+.segmented {
+  display: flex;
+}
+
+.segmented button + button {
+  margin-left: -1px;
+}
+
+.segmented button:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.segmented button:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* The page fills the window: the controls stay at the top and only the map or the table
+   below them scrolls. */
+main:has(.explore) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.explore {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 520px;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0 12px;
+}
+
+.toolbar .controls {
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.toolbar .controls select {
+  margin-left: 0;
+}
+
+.toolbar .controls input {
+  flex: 0 1 240px;
+}
+
+.toolbar .segmented:not(:last-child) {
+  margin-right: 8px;
+}
+
+.explore-body {
+  flex: 1;
+  min-height: 0;
+  padding-bottom: 16px;
+  overflow: auto;
 }
 
 .stats {
@@ -332,6 +400,89 @@ td {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
+}
+
+/* The page layout sets the height; the minimum applies when it does not. */
+.map-frame {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 420px;
+  border: 1px solid var(--border);
+}
+
+.map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--muted);
+}
+
+.map-cities {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.map-cities button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(21, 23, 26, 0.85);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.map-cities button:hover {
+  border-color: var(--muted);
+}
+
+.map-legend {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(21, 23, 26, 0.85);
+}
+
+/* The overlay legend is narrower than the page legend, so that it covers less of the map. */
+.map-legend .scale-position {
+  width: 340px;
+  padding: 24px 44px 0;
+  font-size: 12px;
+}
+
+.map-legend .scale-ends {
+  margin: 52px -44px 0;
+}
+
+.map-card-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.map-card-meta,
+.map-card-hint {
+  color: var(--muted);
+}
+
+.map-card-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.map-card-hint {
+  margin-top: 4px;
+  font-size: 11px;
 }
 
 /* The map uses the whole width of the window, unlike the tables. */
@@ -340,15 +491,12 @@ main:has(.map-wrap) {
 }
 
 .map {
-  /* The shape of the starting view (Canada up to the top of Quebec, in Web Mercator), so that
-     the map shows no extra Arctic above it. */
-  aspect-ratio: 2.5;
-  min-height: 360px;
-  border: 1px solid var(--border);
+  position: absolute;
+  inset: 0;
 }
 
 .maplibregl-popup-content {
-  padding: 4px 8px;
+  padding: 8px 10px;
   border-radius: 4px;
   background: var(--surface);
   color: var(--text);
@@ -639,9 +787,25 @@ main:has(.map-wrap) {
     display: none;
   }
 
-  .map {
-    aspect-ratio: 1;
+  /* On a phone, the legend would hide most of the map: it goes below it instead. */
+  .map-frame {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
+    border: none;
+  }
+
+  .map {
+    position: relative;
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+  }
+
+  .map-legend {
+    position: static;
+    max-width: none;
+    padding: 12px 0 0;
+    background: none;
   }
 }
 

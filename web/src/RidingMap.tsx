@@ -2,8 +2,9 @@ import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { FeatureCollection, MultiPolygon } from "geojson";
+import { type Lang, type Text, useLang } from "./i18n";
 import { HIGH, LOW } from "./questions";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // MapLibre fetches files from a web worker, where only absolute URLs resolve.
 const dataUrl = (name: string) =>
@@ -12,12 +13,21 @@ const dataUrl = (name: string) =>
 // MapLibre 6 ships its web worker as a separate file that the bundler must serve.
 maplibregl.setWorkerUrl(workerUrl);
 
-// Up to just north of Nunavik (62.6°N): further north, the Arctic fills the frame for a
-// handful of ridings.
-const BOUNDS: maplibregl.LngLatBoundsLike = [
+// From Point Pelee (41.7°N) to just north of Quebec (62.6°N): the Arctic islands are left out
+// of the first view, where they would take most of the space.
+const CANADA: maplibregl.LngLatBoundsLike = [
   [-141, 41.6],
-  [-52.6, 62.6],
+  [-52.6, 63],
 ];
+
+// Urban ridings are a few pixels wide in the view of all Canada.
+const CITIES: { name: Text; bounds: maplibregl.LngLatBoundsLike }[] = [
+  { name: { en: "Vancouver", fr: "Vancouver" }, bounds: [[-123.3, 49.0], [-122.5, 49.4]] },
+  { name: { en: "Toronto", fr: "Toronto" }, bounds: [[-79.7, 43.55], [-79.1, 43.9]] },
+  { name: { en: "Montreal", fr: "Montréal" }, bounds: [[-74.0, 45.4], [-73.45, 45.72]] },
+];
+
+const FIT_PADDING = 16;
 
 const BACKGROUND = "#15171a";
 const LOW_COLOR = "#eef0f2";
@@ -40,6 +50,7 @@ const STYLE: maplibregl.StyleSpecification = {
 
 type Located = {
   fed23: number;
+  province: string;
   estimate_mean: number;
   estimate_low: number;
   estimate_high: number;
@@ -56,7 +67,6 @@ type Comparison = {
 
 type Props = { ridings: Located[]; color: string; comparison?: Comparison };
 
-type MapProps = Props & { title: string };
 
 // Color stops are [position, color], with positions from 0 (low) to 1 (high).
 type Stops = [number, string][];
@@ -117,10 +127,13 @@ function gradient(stops: Stops): string {
 const signed = (value: number) =>
   `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(2)}`;
 
+const formatNumber = (value: number, comparison?: Comparison) =>
+  comparison ? value.toFixed(2) : `${(100 * value).toFixed(1)}%`;
+
 function formatValue(value: number, comparison?: Comparison): string {
-  if (!comparison) return `${(100 * value).toFixed(1)}%`;
+  if (!comparison) return formatNumber(value);
   const { reference, referenceName } = comparison;
-  return `${value.toFixed(2)} (${signed(value - reference)} vs ${referenceName})`;
+  return `${formatNumber(value, comparison)} (${signed(value - reference)} vs ${referenceName})`;
 }
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
@@ -149,10 +162,7 @@ function showEstimates(map: maplibregl.Map, props: Props) {
   for (const riding of ridings) {
     map.setFeatureState(
       { source: "ridings", id: riding.fed23 },
-      {
-        label: formatValue(riding.estimate_mean, comparison),
-        scaled: scaledValue(riding, scale, comparison),
-      },
+      { scaled: scaledValue(riding, scale, comparison) },
     );
   }
 }
@@ -212,39 +222,98 @@ function ShareLegend({ low, high, stops }: Scale) {
 
 // Reading notes, shown under the map.
 function ComparisonNotes({ referenceName, scaleLabels }: Comparison) {
+  const { t } = useLang();
   const top = scaleLabels[scaleLabels.length - 1];
   return (
     <ul className="legend-caption">
-      <li>Each riding gets its average answer on the scale above.</li>
       <li>
-        +0.10 means a riding's average is 0.10 point above {referenceName}'s: it leans toward "{top}".
+        {t(
+          `Each riding's average answer, compared with ${referenceName}'s. +0.10: 0.10 point closer to "${top}".`,
+          `Réponse moyenne de chaque circonscription, comparée à celle de ${referenceName}. +0,10 : 0,10 point plus près de « ${top} ».`,
+        )}
       </li>
       <li>
-        Grey: the riding cannot be told apart from {referenceName} (its 90% interval includes{" "}
-        {referenceName}'s average).
+        {t(
+          `Grey: the riding's 90% interval includes ${referenceName}'s average.`,
+          `Gris : l'intervalle à 90 % de la circonscription contient la moyenne de ${referenceName}.`,
+        )}
       </li>
-      <li>Colors stop growing at the ends of the bar, so that a few extreme ridings do not wash out the others.</li>
+      <li>
+        {t(
+          "Ridings beyond the ends of the bar take the end colors.",
+          "Les circonscriptions au-delà des bouts de la barre prennent la couleur du bout.",
+        )}
+      </li>
     </ul>
   );
 }
 
 function ShareNotes() {
+  const { t } = useLang();
   return (
     <ul className="legend-caption">
-      <li>Estimated share of people in each riding.</li>
-      <li>Colors run from the lowest riding to the highest, so that differences stand out even when the share is small everywhere.</li>
+      <li>{t("Estimated share of people in each riding.", "Part estimée des gens dans chaque circonscription.")}</li>
+      <li>
+        {t(
+          "Colors run from the lowest riding to the highest.",
+          "Les couleurs vont de la circonscription la plus basse à la plus haute.",
+        )}
+      </li>
     </ul>
   );
 }
 
+function popupCard(
+  name: string,
+  riding: Located | undefined,
+  comparison: Comparison | undefined,
+  t: (en: string, fr: string) => string,
+): HTMLElement {
+  const lines: [string, string][] = riding
+    ? [
+        ["map-card-name", name],
+        ["map-card-meta", riding.province],
+        ["map-card-value", formatValue(riding.estimate_mean, comparison)],
+        [
+          "map-card-meta",
+          t(
+            `90% interval: ${formatNumber(riding.estimate_low, comparison)} to ${formatNumber(riding.estimate_high, comparison)}`,
+            `Intervalle à 90 % : ${formatNumber(riding.estimate_low, comparison)} à ${formatNumber(riding.estimate_high, comparison)}`,
+          ),
+        ],
+      ]
+    : [
+        ["map-card-name", name],
+        ["map-card-meta", t("Filtered out", "Exclue par le filtre")],
+      ];
+  lines.push(["map-card-hint", t("Click to open the riding page", "Cliquer pour ouvrir la page")]);
+  const card = document.createElement("div");
+  for (const [className, text] of lines) {
+    const line = document.createElement("div");
+    line.className = className;
+    line.textContent = text;
+    card.append(line);
+  }
+  return card;
+}
+
+const hoverFilter = (fed23: number | null): maplibregl.FilterSpecification => [
+  "==",
+  ["get", "fed23"],
+  fed23 ?? -1,
+];
+
 async function addLayers(map: maplibregl.Map) {
   const canada: FeatureCollection = await (await fetch(dataUrl("canada.geojson"))).json();
 
-  // promoteId lets the estimates be attached to each riding by its code.
+  // promoteId lets the estimates be attached to each riding by its code. The outlines are
+  // simplified to 500 m, so tiles past zoom 8 would add no detail: past it, MapLibre scales
+  // the zoom 8 tiles instead of cutting new ones on every zoom.
   map.addSource("ridings", {
     type: "geojson",
     data: dataUrl("ridings.geojson"),
     promoteId: "fed23",
+    maxzoom: 8,
   });
   map.addLayer({ id: "fill", type: "fill", source: "ridings" });
   map.addLayer({
@@ -252,6 +321,13 @@ async function addLayers(map: maplibregl.Map) {
     type: "line",
     source: "ridings",
     paint: { "line-color": BACKGROUND, "line-width": 0.4 },
+  });
+  map.addLayer({
+    id: "hover",
+    type: "line",
+    source: "ridings",
+    filter: hoverFilter(null),
+    paint: { "line-color": "#ffffff", "line-width": 2 },
   });
   map.addLayer({
     id: "places",
@@ -269,7 +345,7 @@ async function addLayers(map: maplibregl.Map) {
       ],
     ],
     layout: {
-      "text-field": ["coalesce", ["get", "name_en"], ["get", "name"]],
+      "text-field": cityLabel("en"),
       "text-font": ["Noto Sans Regular"],
       "text-size": ["interpolate", ["linear"], ["zoom"], 3, 11, 9, 14],
     },
@@ -277,46 +353,74 @@ async function addLayers(map: maplibregl.Map) {
   });
 }
 
-export default function RidingMap({ title, ridings, color, comparison }: MapProps) {
+// OpenFreeMap names places in many languages; "name" is the local name.
+const cityLabel = (lang: Lang): maplibregl.ExpressionSpecification => [
+  "coalesce",
+  ["get", `name:${lang}`],
+  ["get", "name"],
+];
+
+export default function RidingMap({ ridings, color, comparison }: Props) {
+  const { lang, t } = useLang();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const loaded = useRef(false);
+  const [isLoading, setLoading] = useState(true);
   // The map loads after the first render; it then needs the latest filters, not the first ones.
-  const latest = useRef<Props>({ ridings, color, comparison });
-  latest.current = { ridings, color, comparison };
+  const latest = useRef({ ridings, color, comparison, lang, t });
+  latest.current = { ridings, color, comparison, lang, t };
 
   useEffect(() => {
     const instance = new maplibregl.Map({
       container: container.current!,
       style: STYLE,
-      bounds: BOUNDS,
-      // Panning stops just south of Point Pelee (41.7°N), Canada's southernmost point.
-      maxBounds: [
-        [-160, 41],
-        [-35, 66],
-      ],
+      bounds: CANADA,
+      fitBoundsOptions: { padding: FIT_PADDING },
+      renderWorldCopies: false,
       maxZoom: 11,
       attributionControl: { compact: true },
     });
     // Offset so the popup never sits under the cursor, which would hide the riding below it.
-    const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
+    const popup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 12,
+      className: "map-card",
+    });
+
+    // On a flat map, the Arctic is stretched so much that the south, where most ridings are,
+    // shrinks to a strip. The globe keeps areas close to their true size.
+    instance.on("style.load", () => {
+      instance.setProjection({ type: "globe" });
+      instance.fitBounds(CANADA, { padding: FIT_PADDING, animate: false });
+    });
 
     instance.on("load", async () => {
       await addLayers(instance);
       loaded.current = true;
       showEstimates(instance, latest.current);
+      instance.setLayoutProperty("places", "text-field", cityLabel(latest.current.lang));
+      instance.once("idle", () => setLoading(false));
     });
 
+    let hovered: number | null = null;
     instance.on("mousemove", "fill", (event) => {
-      const feature = event.features![0];
-      const value = (feature.state.label as string | undefined) ?? "filtered out";
+      const { fed23, fed23_name } = event.features![0].properties;
+      if (fed23 !== hovered) {
+        hovered = fed23;
+        instance.setFilter("hover", hoverFilter(fed23));
+      }
+      const { ridings, comparison, t } = latest.current;
+      const riding = ridings.find((candidate) => candidate.fed23 === fed23);
       instance.getCanvas().style.cursor = "pointer";
       popup
         .setLngLat(event.lngLat)
-        .setText(`${feature.properties.fed23_name}: ${value}`)
+        .setDOMContent(popupCard(fed23_name, riding, comparison, t))
         .addTo(instance);
     });
     instance.on("mouseleave", "fill", () => {
+      hovered = null;
+      instance.setFilter("hover", hoverFilter(null));
       instance.getCanvas().style.cursor = "";
       popup.remove();
     });
@@ -324,26 +428,50 @@ export default function RidingMap({ title, ridings, color, comparison }: MapProp
       window.location.hash = `#/riding/${event.features![0].properties.fed23}`;
     });
 
+    // The page layout, not only the window, sets the size of the map.
+    const observer = new ResizeObserver(() => instance.resize());
+    observer.observe(container.current!);
+
     map.current = instance;
-    return () => instance.remove();
+    return () => {
+      observer.disconnect();
+      instance.remove();
+    };
   }, []);
 
   useEffect(() => {
     if (loaded.current) showEstimates(map.current!, { ridings, color, comparison });
   }, [ridings, color, comparison]);
 
+  useEffect(() => {
+    if (loaded.current) map.current!.setLayoutProperty("places", "text-field", cityLabel(lang));
+  }, [lang]);
+
+  const zoomTo = (bounds: maplibregl.LngLatBoundsLike) =>
+    map.current?.fitBounds(bounds, { padding: FIT_PADDING });
+
   const { low, high, stops } = colorScale({ ridings, color, comparison });
   return (
     <div className="map-wrap">
-      <div className="map-header">
-        <h2 className="question">{title}</h2>
-        {comparison ? (
-          <ComparisonLegend {...comparison} low={low} high={high} />
-        ) : (
-          <ShareLegend low={low} high={high} stops={stops} />
-        )}
+      <div className="map-frame">
+        <div className="map" ref={container} />
+        {isLoading && <div className="map-loading">{t("Loading map...", "Chargement de la carte...")}</div>}
+        <div className="map-cities">
+          <button onClick={() => zoomTo(CANADA)}>Canada</button>
+          {CITIES.map((city) => (
+            <button key={city.name.en} onClick={() => zoomTo(city.bounds)}>
+              {city.name[lang]}
+            </button>
+          ))}
+        </div>
+        <div className="map-legend">
+          {comparison ? (
+            <ComparisonLegend {...comparison} low={low} high={high} />
+          ) : (
+            <ShareLegend low={low} high={high} stops={stops} />
+          )}
+        </div>
       </div>
-      <div className="map" ref={container} />
       {comparison ? <ComparisonNotes {...comparison} /> : <ShareNotes />}
     </div>
   );
