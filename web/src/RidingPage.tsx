@@ -10,7 +10,7 @@ import RidingMinimap from "./RidingMinimap";
 import RidingProfile from "./RidingProfile";
 import { useLang } from "./i18n";
 import { provinceName } from "./provinces";
-import { type Category, type Question, QUESTIONS } from "./questions";
+import { type Category, DEFAULT_QUESTION, type Question, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import ridingQuery from "./riding.sql?raw";
 import RidingSearch from "./RidingSearch";
@@ -157,7 +157,7 @@ type Props = { con: AsyncDuckDBConnection; fed23: number };
 export default function RidingPage({ con, fed23 }: Props) {
   const { lang, t } = useLang();
   const [estimates, setEstimates] = useState<Estimate[] | null>(null);
-  const [question, setQuestion] = useState(QUESTIONS[0]);
+  const [question, setQuestion] = useState(DEFAULT_QUESTION);
   // Grouped answers are easier to read; questions without groups ignore this choice.
   const [isGrouped, setGrouped] = useState(true);
 

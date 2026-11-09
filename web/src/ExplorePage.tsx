@@ -5,7 +5,7 @@ import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
 import { type Text, useLang } from "./i18n";
 import { provinceLabel } from "./provinces";
-import { type Category, HIGH, OFFICIAL_RESULTS, type Question, QUESTIONS } from "./questions";
+import { type Category, DEFAULT_QUESTION, HIGH, OFFICIAL_RESULTS, type Question } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import resultsQuery from "./results.sql?raw";
 import RidingMap from "./RidingMap";
@@ -51,12 +51,12 @@ async function loadEstimates(
 
 export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
   const { lang, t } = useLang();
-  const [question, setQuestion] = useState(QUESTIONS[0]);
-  const [display, setDisplay] = useState<Display>(() => defaultDisplay(QUESTIONS[0]));
+  const [question, setQuestion] = useState(DEFAULT_QUESTION);
+  const [display, setDisplay] = useState<Display>(() => defaultDisplay(DEFAULT_QUESTION));
   // A function, so that the first category is only computed once: with the current display
-  // and the first question, it would fail once the display moves to "grouped".
+  // and the default question, it would fail once the display moves to "grouped".
   const [category, setCategory] = useState(
-    () => displayCategories(QUESTIONS[0], defaultDisplay(QUESTIONS[0]))[0],
+    () => displayCategories(DEFAULT_QUESTION, defaultDisplay(DEFAULT_QUESTION))[0],
   );
   const [view, setView] = useState<"table" | "map">("map");
   const [filter, setFilter] = useState<Filter>({ province: "", search: "" });

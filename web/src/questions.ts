@@ -429,3 +429,6 @@ export const QUESTIONS: Question[] = [
     categories: VOTE_CATEGORIES,
   },
 ];
+
+// Opens the pages on a question whose map shows clear regional differences.
+export const DEFAULT_QUESTION = QUESTIONS.find((question) => question.code === "province_treatment")!;
