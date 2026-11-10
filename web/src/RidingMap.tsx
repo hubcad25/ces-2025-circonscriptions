@@ -377,7 +377,7 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const loaded = useRef(false);
-  const [isLoading, setLoading] = useState(true);
+  const [isMapLoading, setMapLoading] = useState(true);
   // The map loads after the first render; it then needs the latest filters, not the first ones.
   const latest = useRef({ ridings, color, comparison, province, lang, t });
   latest.current = { ridings, color, comparison, province, lang, t };
@@ -412,7 +412,7 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
       loaded.current = true;
       showEstimates(instance, latest.current);
       instance.setLayoutProperty("places", "text-field", cityLabel(latest.current.lang));
-      instance.once("idle", () => setLoading(false));
+      instance.once("idle", () => setMapLoading(false));
     });
 
     let hovered: number | null = null;
@@ -466,6 +466,8 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
   const zoomTo = (bounds: maplibregl.LngLatBoundsLike) =>
     map.current?.fitBounds(bounds, { padding: FIT_PADDING });
 
+  // The map is created before the estimates arrive; until then, it has no colors or legend.
+  const isLoading = isMapLoading || ridings.length === 0;
   const { low, high, stops } = colorScale({ ridings, color, comparison });
   return (
     <div className="map-wrap">
@@ -480,13 +482,15 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
             </button>
           ))}
         </div>
-        <div className="map-legend">
-          {comparison ? (
-            <ComparisonLegend {...comparison} low={low} high={high} />
-          ) : (
-            <ShareLegend low={low} high={high} stops={stops} />
-          )}
-        </div>
+        {!isLoading && (
+          <div className="map-legend">
+            {comparison ? (
+              <ComparisonLegend {...comparison} low={low} high={high} />
+            ) : (
+              <ShareLegend low={low} high={high} stops={stops} />
+            )}
+          </div>
+        )}
       </div>
       {comparison ? <ComparisonNotes {...comparison} /> : <ShareNotes />}
     </div>
