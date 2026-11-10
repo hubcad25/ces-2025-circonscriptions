@@ -574,8 +574,9 @@ td {
   font-size: 11px;
 }
 
-/* The map uses the whole width of the window, unlike the tables. */
-main:has(.map-wrap) {
+/* Explore uses the whole width of the window for its map. The rule matches .explore, which is
+   there from the first render, rather than the map, which only appears once the data loads. */
+main:has(.explore) {
   max-width: none;
 }
 
