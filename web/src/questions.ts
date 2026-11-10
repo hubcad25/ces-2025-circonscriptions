@@ -84,7 +84,7 @@ export const QUESTIONS: Question[] = [
     groups: AGREEMENT_GROUPS,
     isOrdinal: true,
     ends: [{ en: "Government not responsible for housing", fr: "Le logement n'est pas la responsabilité de l'État" }, { en: "Government responsible for housing", fr: "Le logement est la responsabilité de l'État" }],
-    headline: { en: "{more} likely to say the government should provide housing", fr: "{more} enclins à dire que l'État doit fournir un logement" },
+    headline: { en: "{more} likely to see housing as a government responsibility", fr: "{more} enclins à voir le logement comme une responsabilité de l'État" },
   },
   {
     code: "spend_education",
@@ -227,7 +227,7 @@ export const QUESTIONS: Question[] = [
     groups: AGREEMENT_GROUPS,
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
-    headline: { en: "{more} likely to want women to stay home", fr: "{more} enclins à vouloir que les femmes restent à la maison" },
+    headline: { en: "{more} likely to say society would be better off if fewer women worked", fr: "{more} enclins à dire que la société irait mieux si moins de femmes travaillaient" },
   },
   {
     code: "religion_importance",
@@ -374,7 +374,7 @@ export const QUESTIONS: Question[] = [
     ],
     isOrdinal: true,
     ends: [{ en: "Treated worse", fr: "Traitée moins bien" }, { en: "Treated better", fr: "Traitée mieux" }],
-    headline: { en: "{more} likely to say their province is treated well", fr: "{more} enclins à dire que leur province est bien traitée" },
+    headline: { en: "{more} likely to say their province is favoured", fr: "{more} enclins à dire que leur province est avantagée" },
   },
   {
     code: "mail_vote_trust",
