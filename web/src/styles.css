@@ -547,12 +547,12 @@ td {
 /* The overlay legend is narrower than the page legend, so that it covers less of the map. */
 .map-legend .scale-position {
   width: 340px;
-  padding: 24px 44px 0;
+  padding: 0 44px 56px;
   font-size: 12px;
 }
 
 .map-legend .scale-ends {
-  margin: 52px -44px 0;
+  margin: 0 -44px 28px;
 }
 
 .map-card-name {
@@ -622,12 +622,12 @@ main:has(.map-wrap) {
   height: 12px;
 }
 
-/* Room above the line for the Canada marker, below it for the answer labels. */
+/* Room below the line for the answer labels, which can wrap to three lines. */
 /* Side padding leaves room for the end answer labels, centered on the ends of the line. */
 .scale-position {
   width: 520px;
   max-width: 100%;
-  padding: 28px 56px 0;
+  padding: 0 56px 64px;
 }
 
 .scale-band {
@@ -636,12 +636,12 @@ main:has(.map-wrap) {
   height: 10px;
 }
 
-/* Below the answer labels, which take two lines. */
+/* Above the line, with room left below them for the Canada marker. */
 .scale-ends {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  margin: 64px -56px 0;
+  margin: 0 -56px 32px;
 }
 
 /* Long ends wrap within their half instead of pushing the page wider. */

@@ -188,6 +188,14 @@ function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
   };
   return (
     <div className="legend scale-position">
+      <div className="scale-ends">
+        <span style={{ color: LOW }}>
+          ← {ends[0]} ({signed(low - reference)} vs {referenceName})
+        </span>
+        <span style={{ color: HIGH }}>
+          {ends[1]} ({signed(high - reference)} vs {referenceName}) →
+        </span>
+      </div>
       <div className="scale-line">
         <span className="scale-band" style={band} />
         {scaleLabels.map((label, index) => (
@@ -199,14 +207,6 @@ function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
         ))}
         <span className="scale-marker" style={{ left: `${position(reference)}%` }}>
           {referenceName} {reference.toFixed(2)}
-        </span>
-      </div>
-      <div className="scale-ends">
-        <span style={{ color: LOW }}>
-          ← {ends[0]} ({signed(low - reference)} vs {referenceName})
-        </span>
-        <span style={{ color: HIGH }}>
-          {ends[1]} ({signed(high - reference)} vs {referenceName}) →
         </span>
       </div>
     </div>
