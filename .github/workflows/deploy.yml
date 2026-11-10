@@ -1,6 +1,6 @@
 name: Deploy website
 
-# The MRP runs locally; this workflow only builds the site from the committed Parquet files.
+# The MRP runs locally; this workflow only builds the site from the committed JSON files.
 on:
   push:
     branches: [main]
