@@ -1,28 +1,16 @@
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useState } from "react";
+import { loadValidation } from "./data";
 import FilterControls, { type Filter, matches } from "./filters";
 import { type Text, useLang } from "./i18n";
 import { PARTIES } from "./parties";
 import RidingTable, { type Riding } from "./RidingTable";
-import ridingsQuery from "./ridings.sql?raw";
 
 const WAVES: { code: string; label: Text }[] = [
   { code: "vote_post", label: { en: "Reported vote", fr: "Vote déclaré" } },
   { code: "vote_pre", label: { en: "Vote intention", fr: "Intention de vote" } },
 ];
 
-async function loadRidings(
-  con: AsyncDuckDBConnection,
-  question: string,
-  party: string,
-): Promise<Riding[]> {
-  const statement = await con.prepare(ridingsQuery);
-  const result = await statement.query(question, party);
-  await statement.close();
-  return result.toArray().map((row) => row.toJSON() as Riding);
-}
-
-export default function ValidationPage({ con }: { con: AsyncDuckDBConnection }) {
+export default function ValidationPage() {
   const { lang, t } = useLang();
   const [wave, setWave] = useState(WAVES[0].code);
   const [party, setParty] = useState(PARTIES[0]);
@@ -30,8 +18,8 @@ export default function ValidationPage({ con }: { con: AsyncDuckDBConnection }) 
   const [allRidings, setRidings] = useState<Riding[]>([]);
 
   useEffect(() => {
-    loadRidings(con, wave, party.code).then(setRidings);
-  }, [con, wave, party]);
+    loadValidation(wave, party.code).then(setRidings);
+  }, [wave, party]);
 
   const ridings = allRidings.filter((riding) => matches(riding, filter));
   const covered = ridings.filter((riding) => riding.is_covered).length;

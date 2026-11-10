@@ -4,7 +4,7 @@ Riding-level estimates (2023 boundaries) of vote intention and political attitud
 
 <!--- Vote estimates are compared to the official results of the April 28, 2025 election. --->
 
-Pipeline: Python and SQL (DuckDB). Website: https://hubcad25.github.io/ces-2025-circonscriptions/ (React, DuckDB-WASM, MapLibre), with a map and table of the estimates by riding, a page per riding, and a validation table against the official results.
+Pipeline: Python and SQL (DuckDB). Website: https://hubcad25.github.io/ces-2025-circonscriptions/ (React, MapLibre), with a map and table of the estimates by riding, a page per riding, and a validation table against the official results.
 
 ## Run
 
@@ -15,7 +15,7 @@ make install   # dependencies
 make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
 make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
 make mrp       # fits the MRP model for the vote and attitude questions (~75 min)
-make export    # writes the website data to web/public/data/ (Parquet, GeoJSON, PMTiles)
+make export    # writes the website data to web/public/data/ (JSON, GeoJSON, PMTiles)
 make tables    # lists tables and row counts
 make show TABLE=analytics.results_fed   # previews a table
 make ui        # DuckDB web UI, read-only
@@ -52,6 +52,7 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 - `sql/staging`: cleaned data, one table per source
 - `sql/analytics`: analysis tables
 - `sql/estimates`: poststratification and validation, run after the MRP model
+- `sql/export`: the JSON files of the website (one per question, one per riding, validation), written by `make export`
 - `tests/`: data quality checks
 - `web/`: the website (React + Vite), deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
 

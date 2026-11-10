@@ -1,13 +1,11 @@
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { loadQuestion } from "./data";
 import EstimateTable, { type Estimate } from "./EstimateTable";
-import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
 import { type Text, useLang } from "./i18n";
 import { provinceLabel, provinceName } from "./provinces";
 import { type Category, DEFAULT_QUESTION, HIGH, OFFICIAL_RESULTS, type Question } from "./questions";
 import QuestionSelect from "./QuestionSelect";
-import resultsQuery from "./results.sql?raw";
 import RidingMap from "./RidingMap";
 
 type Display = "grouped" | "detailed" | "canada";
@@ -35,21 +33,7 @@ function displayCategories(question: Question, display: Display): Category[] {
   return question.categories;
 }
 
-async function loadEstimates(
-  con: AsyncDuckDBConnection,
-  question: string,
-  category: string,
-): Promise<Estimate[]> {
-  const isOfficial = question === OFFICIAL_RESULTS;
-  const statement = await con.prepare(isOfficial ? resultsQuery : estimatesQuery);
-  const result = isOfficial
-    ? await statement.query(category)
-    : await statement.query(question, category);
-  await statement.close();
-  return result.toArray().map((row) => row.toJSON() as Estimate);
-}
-
-export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
+export default function ExplorePage() {
   const { lang, t } = useLang();
   const [question, setQuestion] = useState(DEFAULT_QUESTION);
   const [display, setDisplay] = useState<Display>(() => defaultDisplay(DEFAULT_QUESTION));
@@ -63,8 +47,8 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
   const [allEstimates, setEstimates] = useState<Estimate[]>([]);
 
   useEffect(() => {
-    loadEstimates(con, question.code, category.code).then(setEstimates);
-  }, [con, question, category]);
+    loadQuestion(question.code, category.code).then(setEstimates);
+  }, [question, category]);
 
   // A new question or display starts on its first category.
   function choose(nextQuestion: Question, nextDisplay: Display) {

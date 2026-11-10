@@ -2,7 +2,8 @@ import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
 import * as maplibregl from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import { useLang } from "./i18n";
-import { BACKGROUND, cityLabel, dataUrl, STYLE } from "./RidingMap";
+import { dataUrl } from "./data";
+import { BACKGROUND, cityLabel, STYLE } from "./RidingMap";
 
 // Half a zoom level out from the tightest fit, to show the neighbours.
 const ZOOM_OUT = 0.5;
