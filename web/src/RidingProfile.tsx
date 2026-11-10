@@ -14,17 +14,30 @@ type Standout = { question: Question; row: Estimate; reference: number; shift: n
 // The attitudes where the riding's mean answer is furthest from the reference mean. The shift is
 // a share of the scale length so that 3-point and 5-point scales compare. Only differences the
 // model is sure of count: the reference mean must lie outside the riding's interval.
-function standouts(estimates: Estimate[], key: Reference): Standout[] {
+function standouts(
+  estimates: Estimate[],
+  key: Reference,
+  isSkipped: (row: Estimate) => boolean = () => false,
+): Standout[] {
   return ATTITUDES.flatMap((question) => {
     const row = estimates.find((r) => r.question === question.code && r.category === "mean");
     const reference = row?.[key];
-    if (!row || reference == null) return [];
+    if (!row || reference == null || isSkipped(row)) return [];
     if (row.estimate_low <= reference && reference <= row.estimate_high) return [];
     const shift = (row.estimate_mean - reference) / (question.categories.length - 1);
     return [{ question, row, reference, shift }];
   })
     .sort((a, b) => Math.abs(b.shift) - Math.abs(a.shift))
     .slice(0, STANDOUT_COUNT);
+}
+
+// The gap with Canada splits into the riding's gap with its province and the province's gap with
+// Canada. When the province's part is the larger one, the riding mostly differs from Canada
+// because its whole province does, and the comparison with Canada leaves it out.
+function isMostlyProvincial(row: Estimate): boolean {
+  const { provincial_share: province, national_share: canada } = row;
+  if (province == null || canada == null) return false;
+  return Math.abs(province - canada) > Math.abs(row.estimate_mean - province);
 }
 
 const BAR_WIDTH = 240;
@@ -133,6 +146,16 @@ export default function RidingProfile({ estimates, onSelect }: Props) {
   const { lang, t } = useLang();
   const code = estimates[0].province;
   const province = provinceName(code, lang);
+  const isTerritory = TERRITORIES.includes(code);
+  const provincial = isTerritory ? [] : standouts(estimates, "provincial_share");
+  // No question appears in both lists, and the comparison with Canada keeps what is specific to
+  // the riding beyond its province.
+  const shown = new Set(provincial.map((item) => item.question.code));
+  const national = standouts(
+    estimates,
+    "national_share",
+    (row) => shown.has(row.question) || (!isTerritory && isMostlyProvincial(row)),
+  );
 
   return (
     <section id="standouts" className="profile">
@@ -145,18 +168,8 @@ export default function RidingProfile({ estimates, onSelect }: Props) {
         <span className="key-reference" /> {t("Reference", "Référence")}
       </p>
       <div className="profile-columns">
-        {!TERRITORIES.includes(code) && (
-          <StandoutGroup
-            title={province}
-            items={standouts(estimates, "provincial_share")}
-            onSelect={onSelect}
-          />
-        )}
-        <StandoutGroup
-          title="Canada"
-          items={standouts(estimates, "national_share")}
-          onSelect={onSelect}
-        />
+        {!isTerritory && <StandoutGroup title={province} items={provincial} onSelect={onSelect} />}
+        <StandoutGroup title="Canada" items={national} onSelect={onSelect} />
       </div>
     </section>
   );
