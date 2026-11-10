@@ -12,7 +12,7 @@ Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12) and, for `make 
 
 ```bash
 make install   # dependencies
-make extract   # downloads raw data into data/raw/ (127 MB), checks SHA-256 (~9 min)
+make extract   # downloads raw data into data/raw/ (143 MB), checks SHA-256 (~9 min)
 make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
 make mrp       # fits the MRP model for the vote and attitude questions (~75 min)
 make export    # writes the website data to web/public/data/ (JSON, GeoJSON, PMTiles)
@@ -54,7 +54,7 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 - `sql/staging`: cleaned data, one table per source
 - `sql/analytics`: analysis tables
 - `sql/estimates`: poststratification and validation, run after the MRP model
-- `sql/export`: the JSON files of the website (one per question, one per riding, validation), written by `make export`
+- `sql/export`: the JSON files of the website (one per question, one per riding, validation) and the city names of the map, written by `make export`
 - `tests/`: data quality checks
 - `web/`: the website (React + Vite), deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
 
@@ -68,6 +68,7 @@ Current tables:
 - `staging.candidates`: one row per candidate; the party is parsed from the bilingual suffix attached to the name, the six main parties are kept apart, others are grouped as `OTH`
 - `staging.ridings_2013`, `staging.ridings_2023`: riding boundaries, in EPSG:3347
 - `staging.blocks`, `staging.da_population`: dissemination blocks (representative point) and dissemination area populations
+- `staging.subdivisions`: census subdivisions (municipalities) with their population and English and French names; the 200 largest name places on the map, each at its population-weighted centre
 - `staging.riding_population`: official population by riding, 2013 and 2023 boundaries
 - `staging.census_age_gender_language`, `staging.census_education_gender`, `staging.census_province_education`: census counts used to build poststratification cells
 - `analytics.fed_crosswalk`: share of each 2013 riding's population in each 2023 riding, from a spatial join of blocks; a dissemination area's population is split evenly across its blocks (median gap with official riding populations 0.16%, max 4.2%)
