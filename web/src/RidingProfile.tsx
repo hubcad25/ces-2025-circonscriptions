@@ -53,10 +53,24 @@ function ScaleBar({ low, mean, high, reference, ranks }: BarProps) {
           y2={MIDDLE + 4}
         />
       ))}
-      <rect className="range" x={x(low)} y={MIDDLE - 5} width={x(high) - x(low)} height={10} rx={5} />
-      <circle className="reference" cx={x(reference)} cy={MIDDLE} r={5} />
-      <circle className="mean" cx={x(mean)} cy={MIDDLE} r={6} />
+      <rect className="range" x={x(low)} y={MIDDLE - 4} width={x(high) - x(low)} height={8} rx={4} />
+      <circle className="reference" cx={x(reference)} cy={MIDDLE} r={3.5} />
+      <circle className="mean" cx={x(mean)} cy={MIDDLE} r={4.5} />
     </svg>
+  );
+}
+
+// The headline's {more} becomes the direction word, capitalized when it opens the sentence.
+function Headline({ text, isHigher }: { text: string; isHigher: boolean }) {
+  const { t } = useLang();
+  const [before, after] = text.split("{more}");
+  const word = isHigher ? t("more", "plus") : t("less", "moins");
+  return (
+    <span className="standout-headline">
+      {before}
+      <strong>{before ? word : word[0].toUpperCase() + word.slice(1)}</strong>
+      {after}
+    </span>
   );
 }
 
@@ -87,13 +101,8 @@ function StandoutGroup({ title, items, onSelect }: GroupProps) {
                   style={{ "--party": color } as CSSProperties}
                   onClick={() => onSelect(question)}
                 >
+                  {question.headline && <Headline text={question.headline[lang]} isHigher={shift > 0} />}
                   <span className="standout-question">{question.label[lang]}</span>
-                  {question.ends && (
-                    <span className="standout-lean">
-                      {t("Leans more toward:", "Penche davantage vers :")}{" "}
-                      <strong>{question.ends[shift > 0 ? 1 : 0][lang].toLowerCase()}</strong>
-                    </span>
-                  )}
                   <ScaleBar
                     low={row.estimate_low}
                     mean={row.estimate_mean}

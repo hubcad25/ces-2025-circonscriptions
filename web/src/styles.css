@@ -952,18 +952,20 @@ main:has(.explore, .riding-page) {
   border-color: var(--muted);
 }
 
-.standout-question {
-  font-size: 14px;
-  line-height: 1.35;
+.standout-headline {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
-.standout-lean {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.standout-lean strong {
+.standout-headline strong {
   color: var(--party);
+}
+
+.standout-question {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .scale-bar {
@@ -1041,8 +1043,8 @@ p.legend-caption {
 .key-mean,
 .key-reference {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
 }
 
