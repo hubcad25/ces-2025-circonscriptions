@@ -51,6 +51,13 @@ mrp:
 	uv run python -m pipeline.mrp province_treatment
 	uv run python -m pipeline.mrp economy_past_year
 	uv run python -m pipeline.mrp quebec_sovereignty
+	uv run python -m pipeline.mrp separation_living_standard
+	uv run python -m pipeline.mrp separation_french
+	uv run python -m pipeline.mrp provincial_power
+	uv run python -m pipeline.mrp french_culture_threatened
+	uv run python -m pipeline.mrp mail_vote_trust
+	uv run python -m pipeline.mrp voting_age_16
+	uv run python -m pipeline.mrp mandate_legitimate
 
 export:
 	uv run python -m pipeline.export

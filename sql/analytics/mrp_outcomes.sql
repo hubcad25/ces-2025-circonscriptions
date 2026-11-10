@@ -417,6 +417,75 @@ quebec_sovereignty AS (
         END AS category
     FROM staging.responses
     WHERE variable = 'cps25_quebec_sov'
+),
+
+separation_living_standard AS (
+    SELECT
+        'separation_living_standard' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'better' WHEN 2 THEN 'worse' WHEN 3 THEN 'same' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_qcsol'
+),
+
+separation_french AS (
+    SELECT
+        'separation_french' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'better' WHEN 2 THEN 'worse' WHEN 3 THEN 'same' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_qclang'
+),
+
+provincial_power AS (
+    SELECT
+        'provincial_power' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'federal' WHEN 2 THEN 'provinces' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_provfed'
+),
+
+french_culture_threatened AS (
+    SELECT
+        'french_culture_threatened' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'yes' WHEN 2 THEN 'no' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_cultureQC'
+),
+
+mail_vote_trust AS (
+    SELECT
+        'mail_vote_trust' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'cps25_pos_mailtrust'
+),
+
+voting_age_16 AS (
+    SELECT
+        'voting_age_16' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'strongly_disagree' WHEN 2 THEN 'somewhat_disagree'
+            WHEN 3 THEN 'neither' WHEN 4 THEN 'somewhat_agree' WHEN 5 THEN 'strongly_agree'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_emb_vote16'
+),
+
+mandate_legitimate AS (
+    SELECT
+        'mandate_legitimate' AS question,
+        respondent_id,
+        CASE code WHEN 1 THEN 'yes' WHEN 2 THEN 'no' END AS category
+    FROM staging.responses
+    WHERE variable = 'pes25_mandate'
 )
 
 SELECT * FROM vote_post WHERE category IS NOT NULL
@@ -491,4 +560,18 @@ SELECT * FROM province_treatment WHERE category IS NOT NULL
 UNION ALL
 SELECT * FROM economy_past_year WHERE category IS NOT NULL
 UNION ALL
-SELECT * FROM quebec_sovereignty WHERE category IS NOT NULL;
+SELECT * FROM quebec_sovereignty WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM separation_living_standard WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM separation_french WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM provincial_power WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM french_culture_threatened WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM mail_vote_trust WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM voting_age_16 WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM mandate_legitimate WHERE category IS NOT NULL;
