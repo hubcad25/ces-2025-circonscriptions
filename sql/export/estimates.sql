@@ -1,7 +1,8 @@
 -- Every riding estimate of the website questions, with its widened 90% interval and, for the
 -- vote questions, the official 2025 result (null for a party that ran no candidate). Categories
 -- excluded from a riding (the Bloc outside Quebec) have an estimate of exactly zero and are
--- dropped. Four decimals (0.01 point) keep the files small.
+-- dropped. A question asked in one province only has estimates in the ridings of that province
+-- only. Four decimals (0.01 point) keep the files small.
 SELECT
     s.question,
     s.category,

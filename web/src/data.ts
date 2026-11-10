@@ -85,7 +85,7 @@ export async function loadRiding(fed23: number): Promise<RidingData | null> {
       estimate_low: low,
       estimate_high: high,
       actual_share: actual ?? null,
-      national_share: summaries[question][category].canada,
+      national_share: summaries[question][category].canada ?? null,
       provincial_share: summaries[question][category][riding.province] ?? null,
     })),
   );

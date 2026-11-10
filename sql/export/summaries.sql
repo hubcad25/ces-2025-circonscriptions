@@ -1,5 +1,7 @@
 -- The national and provincial estimate of every question and category, which the ridings are
--- compared with. The area is 'canada' or a province code.
+-- compared with. The area is 'canada' or a province code. A question asked in one province only
+-- (analytics.province_questions) has no national summary, so no 'canada' area: its ridings are
+-- compared with that province.
 WITH national AS (
     SELECT question, category, 'canada' AS area, estimate_mean
     FROM analytics.national_summaries

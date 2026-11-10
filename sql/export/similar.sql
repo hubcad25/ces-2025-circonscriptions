@@ -1,13 +1,21 @@
 -- For each 2023 riding and topic, the 10 most similar and the 10 most different ridings, by their
--- mean answers to the attitudes of the topic. 'all' compares on every attitude.
-WITH topics AS (
+-- mean answers to the attitudes of the topic. 'all' compares on every attitude. A question asked
+-- in one province only has no answer elsewhere, so it cannot compare ridings across Canada.
+WITH attitudes AS (
     SELECT question, topic
     FROM site_questions
+    ANTI JOIN analytics.province_questions
+        USING (question)
     WHERE topic IS NOT NULL
+),
+
+topics AS (
+    SELECT question, topic
+    FROM attitudes
+    WHERE topic <> 'all'
     UNION ALL
     SELECT question, 'all'
-    FROM site_questions
-    WHERE topic IS NOT NULL
+    FROM attitudes
 ),
 
 -- Standardized across ridings, so that every attitude weighs the same in the distance.

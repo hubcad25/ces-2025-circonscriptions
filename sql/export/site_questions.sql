@@ -1,5 +1,6 @@
 -- Every question the website shows, as listed in web/src/questions.ts. Each attitude carries the
--- topic it is compared on in the similar ridings of the riding page; the vote questions have none.
+-- topic it is compared on in the similar ridings of the riding page, or 'all' when it only counts
+-- among all attitudes; the vote questions have none.
 CREATE TEMP TABLE site_questions AS
 SELECT *
 FROM (
@@ -31,13 +32,21 @@ FROM (
         ('no_say', 'democracy'),
         ('people_trusted', 'democracy'),
         ('province_treatment', 'democracy'),
+        ('mail_vote_trust', 'democracy'),
+        ('voting_age_16', 'democracy'),
+        ('mandate_legitimate', 'democracy'),
         ('french_threatened', 'immigration'),
+        ('french_culture_threatened', 'immigration'),
         ('immigration', 'immigration'),
         ('bilingualism', 'immigration'),
         ('spend_immigrants', 'immigration'),
         ('immigrants_jobs', 'immigration'),
         ('immigrants_crime', 'immigration'),
         ('immigrants_fit_in', 'immigration'),
+        ('quebec_sovereignty', 'all'),
+        ('separation_living_standard', 'all'),
+        ('separation_french', 'all'),
+        ('provincial_power', 'all'),
         ('vote_post', NULL),
         ('vote_pre', NULL)
 ) AS questions (question, topic)
