@@ -1,9 +1,31 @@
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson";
 import * as maplibregl from "maplibre-gl";
 import { useEffect, useRef } from "react";
-import { useLang } from "./i18n";
+import { type Lang, useLang } from "./i18n";
 import { dataUrl } from "./data";
-import { BACKGROUND, cityLabel, STYLE } from "./RidingMap";
+import { BACKGROUND } from "./RidingMap";
+
+// A minimal style: only city and town names come from OpenFreeMap (free vector tiles, no API
+// key), so that zooming in does not bring roads, buildings or parks.
+const STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  sources: {
+    openmaptiles: {
+      type: "vector",
+      url: "https://tiles.openfreemap.org/planet",
+      attribution: "OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "background", type: "background", paint: { "background-color": BACKGROUND } }],
+};
+
+// OpenFreeMap names places in many languages; "name" is the local name.
+const cityLabel = (lang: Lang): maplibregl.ExpressionSpecification => [
+  "coalesce",
+  ["get", `name:${lang}`],
+  ["get", "name"],
+];
 
 // Half a zoom level out from the tightest fit, to show the neighbours.
 const ZOOM_OUT = 0.5;

@@ -38,10 +38,12 @@ To check a code change without waiting for a full fit, `uv run python -m pipelin
 | Elections Canada | 44th general election (September 20, 2021), tables 11 and 12 (turnout and results by electoral district, 2013 boundaries) | https://elections.ca/res/rep/off/ovr2021app/53/data_donnees/ |
 | Natural Resources Canada | Federal electoral district boundaries, 2013 and 2023 representation orders | https://ftp.maps.canada.ca/pub/elections_elections/Electoral-districts_Circonscription-electorale/ |
 | Statistics Canada | Representative points of 2021 dissemination blocks | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
+| Statistics Canada | 2021 census subdivision boundaries, for the city names on the map | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/9 |
+| Statistics Canada | 2021 census population of census subdivisions | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest/data/STC_CP,DF_CSD/A5..1.1.1 |
 | Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
 | Statistics Canada | Table 98-10-0209: mother tongue by age and gender, 2013 ridings | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810020901 |
 | Statistics Canada | Table 98-10-0386: highest certificate by age and gender, provinces | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810038601 |
-| OpenFreeMap | City names on the website map (OpenMapTiles, OpenStreetMap data), loaded by the browser | https://openfreemap.org |
+| OpenFreeMap | Place names on the minimap of the riding page (OpenMapTiles, OpenStreetMap data), loaded by the browser | https://openfreemap.org |
 
 Raw data is not versioned (`data/` is ignored by Git); the scripts download it again.
 
