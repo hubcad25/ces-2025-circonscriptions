@@ -574,9 +574,10 @@ td {
   font-size: 11px;
 }
 
-/* Explore uses the whole width of the window for its map. The rule matches .explore, which is
-   there from the first render, rather than the map, which only appears once the data loads. */
-main:has(.explore) {
+/* Explore and the riding page use the whole width of the window, so that they look the same on a
+   laptop and on a large monitor. The rule matches .explore, which is there from the first render,
+   rather than the map, which only appears once the data loads. */
+main:has(.explore, .riding-page) {
   max-width: none;
 }
 
@@ -1065,10 +1066,6 @@ p.legend-caption {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
-}
-
-main:has(.riding-page) {
-  max-width: 1400px;
 }
 
 .riding-header {
