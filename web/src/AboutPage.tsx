@@ -9,7 +9,7 @@ function AboutEnglish() {
       <h2>What is this?</h2>
       <p>
         Estimates of how people in each of Canada's 343 ridings voted in 2025, and what they think
-        about 37 political questions: housing, the US, immigration, democracy, and more.
+        about 45 political questions: housing, the US, immigration, democracy, and more.
       </p>
       <p>
         They come from the <a href="https://doi.org/10.7910/DVN/2YAQ8D">2025 Canadian Election
@@ -88,7 +88,7 @@ function AboutFrench() {
       <h2>C'est quoi ?</h2>
       <p>
         Des estimations du vote de 2025 dans chacune des 343 circonscriptions du Canada, et de ce
-        que les gens y pensent sur 37 questions politiques : logement, États-Unis, immigration,
+        que les gens y pensent sur 45 questions politiques : logement, États-Unis, immigration,
         démocratie, et plus.
       </p>
       <p>

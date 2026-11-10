@@ -72,7 +72,8 @@ Current tables:
 - `analytics.results_fed`: one row per riding × party (votes, share, rank, winner, lead over the next party); 343 ridings, matches the official seat count (169 LPC, 144 CPC, 22 BQ, 7 NDP, 1 GPC)
 - `analytics.past_vote_fed`: share of 2021 electors by vote per 2013 riding, non-voters as `NONE`
 - `analytics.fed_predictors`: standardized riding predictors for the MRP model (French and other mother tongue, bachelor's degree, log density)
-- `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts: `vote_post`, `vote_pre` (LPC, CPC, NDP, BQ, OTH), and 15 ordinal attitude questions on government spending and responsibilities, Canada–US relations, Indigenous peoples, social values, democracy, immigration and language (CES variable names in `sql/analytics/mrp_outcomes.sql`); "don't know" is dropped
+- `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts: `vote_post`, `vote_pre` (LPC, CPC, NDP, BQ, OTH), and 42 ordinal attitude questions on government spending and responsibilities, the economy, Canada–US relations, Indigenous peoples, social values, democracy, immigration and language, Quebec and the federation (CES variable names in `sql/analytics/mrp_outcomes.sql`); "don't know" is dropped
+- `analytics.province_questions`: questions asked in one province only (Quebec sovereignty); they are fitted and poststratified in that province and have no national summary
 - `analytics.mrp_scales`: ordered categories of the ordinal questions, fitted with an ordered logit; the vote is fitted with a multinomial logit
 - `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
 - `analytics.mrp_exclusions`: categories that cannot occur in a province (a party with no candidate there, i.e. the Bloc outside Quebec); the model gives them a probability of zero

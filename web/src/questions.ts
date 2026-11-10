@@ -18,6 +18,9 @@ export type Question = {
   groups?: Category[];
   // What leaning toward each end of the scale means, for the map legend.
   ends?: [Text, Text];
+  // Set for a question asked in one province only: there are no estimates elsewhere, and its
+  // ridings are compared with that province rather than with Canada.
+  province?: string;
 };
 
 const VOTE_CATEGORIES: Category[] = PARTIES;
@@ -344,8 +347,48 @@ export const QUESTIONS: Question[] = [
     ends: [{ en: "Treated worse", fr: "Traitée moins bien" }, { en: "Treated better", fr: "Traitée mieux" }],
   },
   {
+    code: "mail_vote_trust",
+    label: { en: "Voting by mail is trustworthy", fr: "Le vote par la poste est fiable" },
+    theme: { en: "Democracy and trust", fr: "Démocratie et confiance" },
+    categories: AGREEMENT,
+    groups: AGREEMENT_GROUPS,
+    isOrdinal: true,
+    ends: [{ en: "Mail voting not trustworthy", fr: "Vote par la poste pas fiable" }, { en: "Mail voting trustworthy", fr: "Vote par la poste fiable" }],
+  },
+  {
+    code: "voting_age_16",
+    label: { en: "The voting age in federal elections should be lowered from 18 to 16", fr: "L'âge pour voter aux élections fédérales devrait passer de 18 à 16 ans" },
+    theme: { en: "Democracy and trust", fr: "Démocratie et confiance" },
+    categories: AGREEMENT,
+    groups: AGREEMENT_GROUPS,
+    isOrdinal: true,
+    ends: [{ en: "Keep the voting age at 18", fr: "Garder l'âge de vote à 18 ans" }, { en: "Lower the voting age to 16", fr: "Abaisser l'âge de vote à 16 ans" }],
+  },
+  {
+    code: "mandate_legitimate",
+    label: { en: "Given the April 28 results, does the winning party have a legitimate mandate to implement its policies?", fr: "Compte tenu des résultats du 28 avril, le parti gagnant a-t-il un mandat légitime pour mettre en œuvre ses politiques?" },
+    theme: { en: "Democracy and trust", fr: "Démocratie et confiance" },
+    categories: [
+      { code: "no", label: { en: "No", fr: "Non" }, color: LOW },
+      { code: "yes", label: { en: "Yes", fr: "Oui" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "No legitimate mandate", fr: "Pas de mandat légitime" }, { en: "Legitimate mandate", fr: "Mandat légitime" }],
+  },
+  {
     code: "french_threatened",
     label: { en: "Is the French language threatened in Quebec?", fr: "La langue française est-elle menacée au Québec?" },
+    theme: { en: "Immigration and language", fr: "Immigration et langue" },
+    categories: [
+      { code: "no", label: { en: "No", fr: "Non" }, color: LOW },
+      { code: "yes", label: { en: "Yes", fr: "Oui" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "Not threatened", fr: "Pas menacée" }, { en: "Threatened", fr: "Menacée" }],
+  },
+  {
+    code: "french_culture_threatened",
+    label: { en: "Is French culture threatened in Quebec?", fr: "La culture française est-elle menacée au Québec?" },
     theme: { en: "Immigration and language", fr: "Immigration et langue" },
     categories: [
       { code: "no", label: { en: "No", fr: "Non" }, color: LOW },
@@ -409,6 +452,59 @@ export const QUESTIONS: Question[] = [
     groups: AGREEMENT_GROUPS,
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
+  },
+  {
+    code: "quebec_sovereignty",
+    label: { en: "Are you favourable or opposed to Quebec sovereignty?", fr: "Êtes-vous favorable ou opposé(e) à la souveraineté du Québec?" },
+    theme: { en: "Quebec and the federation", fr: "Québec et fédération" },
+    categories: [
+      { code: "very_opposed", label: { en: "Very opposed", fr: "Très opposé(e)" }, color: LOW },
+      { code: "somewhat_opposed", label: { en: "Somewhat opposed", fr: "Plutôt opposé(e)" }, color: "#84adff" },
+      { code: "somewhat_favourable", label: { en: "Somewhat favourable", fr: "Plutôt favorable" }, color: "#fdb022" },
+      { code: "very_favourable", label: { en: "Very favourable", fr: "Très favorable" }, color: HIGH },
+    ],
+    groups: [
+      { code: "grouped_low", label: { en: "Opposed", fr: "Opposé(e)" }, color: LOW },
+      { code: "grouped_high", label: { en: "Favourable", fr: "Favorable" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "Opposed to sovereignty", fr: "Opposé(e) à la souveraineté" }, { en: "Favourable to sovereignty", fr: "Favorable à la souveraineté" }],
+    province: "QC",
+  },
+  {
+    code: "separation_living_standard",
+    label: { en: "If Quebec separates from Canada, your standard of living will...", fr: "Si le Québec se sépare du Canada, votre niveau de vie..." },
+    theme: { en: "Quebec and the federation", fr: "Québec et fédération" },
+    categories: [
+      { code: "worse", label: { en: "Get worse", fr: "Va s'aggraver" }, color: LOW },
+      { code: "same", label: { en: "Stay about the same", fr: "Restera à peu près le même" }, color: MIDDLE },
+      { code: "better", label: { en: "Get better", fr: "Va s'améliorer" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "Would get worse", fr: "Se détériorerait" }, { en: "Would get better", fr: "S'améliorerait" }],
+  },
+  {
+    code: "separation_french",
+    label: { en: "If Quebec separates from Canada, the situation of French in Quebec will...", fr: "Si le Québec se sépare du Canada, la situation de la langue française au Québec..." },
+    theme: { en: "Quebec and the federation", fr: "Québec et fédération" },
+    categories: [
+      { code: "worse", label: { en: "Get worse", fr: "Va s'aggraver" }, color: LOW },
+      { code: "same", label: { en: "Stay about the same", fr: "Restera à peu près la même" }, color: MIDDLE },
+      { code: "better", label: { en: "Get better", fr: "Va s'améliorer" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "French would fare worse", fr: "Le français s'en porterait moins bien" }, { en: "French would fare better", fr: "Le français s'en porterait mieux" }],
+  },
+  {
+    code: "provincial_power",
+    label: { en: "Which do you prefer: a strong federal government or more power to the provinces?", fr: "Lequel préférez-vous : un gouvernement fédéral fort ou plus de pouvoir aux provinces?" },
+    theme: { en: "Quebec and the federation", fr: "Québec et fédération" },
+    categories: [
+      { code: "federal", label: { en: "Strong federal government", fr: "Gouvernement fédéral fort" }, color: LOW },
+      { code: "provinces", label: { en: "More power to the provinces", fr: "Plus de pouvoir aux provinces" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "Strong federal government", fr: "Gouvernement fédéral fort" }, { en: "More power to the provinces", fr: "Plus de pouvoir aux provinces" }],
   },
   {
     code: "vote_post",

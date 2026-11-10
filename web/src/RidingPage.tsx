@@ -25,7 +25,7 @@ export type Estimate = {
   estimate_low: number;
   estimate_high: number;
   actual_share: number | null;
-  national_share: number;
+  national_share: number | null;
   provincial_share: number | null;
 };
 
@@ -38,15 +38,15 @@ async function loadEstimates(con: AsyncDuckDBConnection, fed23: number): Promise
   return result.toArray().map((row) => row.toJSON() as Estimate);
 }
 
-type ChartProps = { categories: Category[]; estimates: Estimate[] };
+type ChartProps = { question: Question; categories: Category[]; estimates: Estimate[] };
 
 // Must match the gap of .facets in the styles.
 const FACET_GAP = 12;
 const MIN_PLOT_WIDTH = 110;
 
 // One chart per answer, in scale order from left to right, sharing the width of the page.
-function QuestionCharts({ categories, estimates }: ChartProps) {
-  const { lang } = useLang();
+function QuestionCharts({ question, categories, estimates }: ChartProps) {
+  const { lang, t } = useLang();
   const container = useRef<HTMLDivElement>(null);
   const [available, setAvailable] = useState(0);
 
@@ -59,6 +59,20 @@ function QuestionCharts({ categories, estimates }: ChartProps) {
   const shown = categories.filter((category) =>
     estimates.some((row) => row.category === category.code),
   );
+  if (shown.length === 0 && question.province) {
+    const province = provinceName(question.province, lang);
+    // Also a div, so that React keeps the element the resize observer watches.
+    return (
+      <div ref={container}>
+        <p className="note">
+          {t(
+            `Asked only in ${province}: no estimate for this riding.`,
+            `Question posée dans une seule province (${province}) : aucune estimation pour cette circonscription.`,
+          )}
+        </p>
+      </div>
+    );
+  }
   const perChart = (available - LABEL_WIDTH) / shown.length - FACET_GAP;
   // On a narrow screen the charts no longer fit side by side: they stack, each with its own
   // row names and the full width.
@@ -219,6 +233,7 @@ export default function RidingPage({ con, fed23 }: Props) {
         )}
       </div>
       <QuestionCharts
+        question={question}
         categories={isGrouped && question.groups ? question.groups : question.categories}
         estimates={estimates.filter((estimate) => estimate.question === question.code)}
       />

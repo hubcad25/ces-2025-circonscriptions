@@ -31,7 +31,7 @@ type Props = {
   mean: number;
   high: number;
   actual: number | null;
-  national: number;
+  national: number | null;
   provincial: number | null;
 };
 
@@ -74,14 +74,18 @@ export default function RidingChart(props: Props) {
           </text>
         </>
       )}
-      <path
-        className="maple-leaf"
-        d={MAPLE_LEAF}
-        transform={`translate(${x(national)} ${CANADA_ROW}) scale(0.8)`}
-      />
-      <text className="label-reference" x={x(national) + 11} y={CANADA_ROW + 4}>
-        {percent(national)}
-      </text>
+      {national !== null && (
+        <>
+          <path
+            className="maple-leaf"
+            d={MAPLE_LEAF}
+            transform={`translate(${x(national)} ${CANADA_ROW}) scale(0.8)`}
+          />
+          <text className="label-reference" x={x(national) + 11} y={CANADA_ROW + 4}>
+            {percent(national)}
+          </text>
+        </>
+      )}
     </svg>
   );
 }

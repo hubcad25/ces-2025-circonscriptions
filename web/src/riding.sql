@@ -1,6 +1,7 @@
 -- Every question and category for one 2023 riding, with the national and provincial estimates
 -- for comparison. The official result only exists for the vote questions; it is null for a
--- party that ran no candidate in the riding.
+-- party that ran no candidate in the riding. A question asked in one province only has no
+-- national estimate.
 SELECT
     s.question,
     s.category,
@@ -21,7 +22,7 @@ SELECT
 FROM 'fed_summaries.parquet' AS s
 LEFT JOIN 'vote_gaps.parquet' AS g
     USING (question, fed23, category)
-INNER JOIN 'national_summaries.parquet' AS n
+LEFT JOIN 'national_summaries.parquet' AS n
     USING (question, category)
 LEFT JOIN 'province_summaries.parquet' AS p
     ON p.question = s.question

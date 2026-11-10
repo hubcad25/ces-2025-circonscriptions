@@ -4,7 +4,7 @@ import EstimateTable, { type Estimate } from "./EstimateTable";
 import estimatesQuery from "./estimates.sql?raw";
 import FilterControls, { type Filter, matches } from "./filters";
 import { type Text, useLang } from "./i18n";
-import { provinceLabel } from "./provinces";
+import { provinceLabel, provinceName } from "./provinces";
 import { type Category, DEFAULT_QUESTION, HIGH, OFFICIAL_RESULTS, type Question } from "./questions";
 import QuestionSelect from "./QuestionSelect";
 import resultsQuery from "./results.sql?raw";
@@ -73,10 +73,12 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
     setCategory(displayCategories(nextQuestion, nextDisplay)[0]);
   }
 
-  // Ridings are compared with their province when one is chosen, with Canada otherwise.
-  const referenceName = filter.province ? provinceLabel(filter.province, lang) : "Canada";
-  const reference = filter.province
-    ? allEstimates.find((estimate) => estimate.province === filter.province)?.provincial
+  // Ridings are compared with their province when one is chosen, with Canada otherwise. A
+  // question asked in one province only is always compared with that province.
+  const referenceProvince = question.province ?? filter.province;
+  const referenceName = referenceProvince ? provinceLabel(referenceProvince, lang) : "Canada";
+  const reference = referenceProvince
+    ? allEstimates.find((estimate) => estimate.province === referenceProvince)?.provincial
     : allEstimates[0]?.national;
 
   // Memoized so that the map only redraws when the display or the data really change.
@@ -107,6 +109,14 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
           )}{" "}
           <a href="#/about">{t("How it works →", "Comment ça marche →")}</a>
         </p>
+        {question.province && (
+          <p className="intro">
+            {t(
+              `Asked only in ${provinceName(question.province, "en")}: no estimate for ridings elsewhere.`,
+              `Question posée dans une seule province (${provinceName(question.province, "fr")}) : aucune estimation ailleurs.`,
+            )}
+          </p>
+        )}
         <div className="controls">
           <QuestionSelect value={question} onChange={(next) => choose(next, defaultDisplay(next))} />
           <span className="spacer" />
@@ -164,6 +174,7 @@ export default function ExplorePage({ con }: { con: AsyncDuckDBConnection }) {
             ridings={estimates}
             color={category.color}
             comparison={comparison}
+            province={question.province}
           />
         ) : (
           <EstimateTable

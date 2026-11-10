@@ -6,7 +6,8 @@ import { QUESTIONS } from "./questions";
 import namesQuery from "./riding_names.sql?raw";
 import { loadFeatures, type Neighbour, rankRidings, type RidingFeatures } from "./similar";
 
-const ATTITUDES = QUESTIONS.filter((question) => question.isOrdinal);
+// A question asked in one province only cannot compare ridings across Canada.
+const ATTITUDES = QUESTIONS.filter((question) => question.isOrdinal && !question.province);
 const LIST_LENGTH = 10;
 
 // Each button compares ridings on a few question themes; "all" uses every attitude.
