@@ -1,32 +1,24 @@
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useEffect, useRef, useState } from "react";
+import { loadRidingNames, type RidingName } from "./data";
 import { normalize, useSlashFocus } from "./filters";
 import { useLang } from "./i18n";
-import namesQuery from "./riding_names.sql?raw";
-
-type Riding = { fed23: number; fed23_name: string };
 
 const MAX_MATCHES = 8;
 
-async function loadRidings(con: AsyncDuckDBConnection): Promise<Riding[]> {
-  const result = await con.query(namesQuery);
-  return result.toArray().map((row) => row.toJSON() as Riding);
-}
-
 // Typing filters the riding names; the arrow keys move through the matches, Enter opens the
 // highlighted one and Escape clears the box.
-export default function RidingSearch({ con }: { con: AsyncDuckDBConnection }) {
+export default function RidingSearch() {
   const { t } = useLang();
   const input = useRef<HTMLInputElement>(null);
-  const [ridings, setRidings] = useState<Riding[]>([]);
+  const [ridings, setRidings] = useState<RidingName[]>([]);
   const [search, setSearch] = useState("");
   // Position of the highlighted match, moved with the arrow keys.
   const [active, setActive] = useState(0);
   useSlashFocus(input);
 
   useEffect(() => {
-    loadRidings(con).then(setRidings);
-  }, [con]);
+    loadRidingNames().then((names) => setRidings([...names.values()]));
+  }, []);
 
   const matches =
     search === ""
@@ -35,7 +27,7 @@ export default function RidingSearch({ con }: { con: AsyncDuckDBConnection }) {
           .filter((riding) => normalize(riding.fed23_name).includes(normalize(search)))
           .slice(0, MAX_MATCHES);
 
-  function open(riding: Riding) {
+  function open(riding: RidingName) {
     setSearch("");
     setActive(0);
     input.current?.blur();

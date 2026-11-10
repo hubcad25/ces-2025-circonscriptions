@@ -3,14 +3,11 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import type { FeatureCollection, MultiPolygon } from "geojson";
 import { Protocol } from "pmtiles";
+import { dataUrl } from "./data";
 import { type Lang, type Text, useLang } from "./i18n";
 import { provinceLabel } from "./provinces";
 import { HIGH, LOW } from "./questions";
 import { useEffect, useRef, useState } from "react";
-
-// MapLibre fetches files from a web worker, where only absolute URLs resolve.
-export const dataUrl = (name: string) =>
-  new URL(`${import.meta.env.BASE_URL}data/${name}`, window.location.href).href;
 
 // MapLibre 6 ships its web worker as a separate file that the bundler must serve.
 maplibregl.setWorkerUrl(workerUrl);

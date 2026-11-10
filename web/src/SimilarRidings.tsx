@@ -1,53 +1,19 @@
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useEffect, useState } from "react";
+import { loadRidingNames, type Neighbours, type RidingName } from "./data";
 import { useLang } from "./i18n";
 import { provinceLabel } from "./provinces";
-import { QUESTIONS } from "./questions";
-import namesQuery from "./riding_names.sql?raw";
-import { loadFeatures, type Neighbour, rankRidings, type RidingFeatures } from "./similar";
 
-// A question asked in one province only cannot compare ridings across Canada.
-const ATTITUDES = QUESTIONS.filter((question) => question.isOrdinal && !question.province);
-const LIST_LENGTH = 10;
-
-// Each button compares ridings on a few question themes; "all" uses every attitude.
-const TOPICS: { code: string; label: [string, string]; themes: string[] | null }[] = [
-  { code: "all", label: ["All attitudes", "Toutes les attitudes"], themes: null },
-  {
-    code: "economy",
-    label: ["Government and economy", "État et économie"],
-    themes: ["Role of government", "Economy", "Canada and the United States"],
-  },
-  {
-    code: "social",
-    label: ["Social values", "Valeurs sociales"],
-    themes: ["Social values", "Indigenous peoples"],
-  },
-  {
-    code: "immigration",
-    label: ["Immigration and language", "Immigration et langue"],
-    themes: ["Immigration and language"],
-  },
-  { code: "democracy", label: ["Democracy and trust", "Démocratie et confiance"], themes: ["Democracy and trust"] },
+// Each button compares ridings on a few question themes; "all" uses every attitude. The topic of
+// each attitude is set in sql/export/site_questions.sql and the lists in sql/export/similar.sql.
+const TOPICS: { code: string; label: [string, string] }[] = [
+  { code: "all", label: ["All attitudes", "Toutes les attitudes"] },
+  { code: "economy", label: ["Government and economy", "État et économie"] },
+  { code: "social", label: ["Social values", "Valeurs sociales"] },
+  { code: "immigration", label: ["Immigration and language", "Immigration et langue"] },
+  { code: "democracy", label: ["Democracy and trust", "Démocratie et confiance"] },
 ];
 
-function featureWeights(themes: string[] | null): Map<string, number> {
-  return new Map(
-    ATTITUDES.map((question) => [
-      question.code,
-      themes === null || themes.includes(question.theme.en) ? 1 : 0,
-    ]),
-  );
-}
-
-type Name = { fed23_name: string; province: string };
-
-async function loadNames(con: AsyncDuckDBConnection): Promise<Map<number, Name>> {
-  const result = await con.query(namesQuery);
-  return new Map(result.toArray().map((row) => [row.fed23, row.toJSON() as Name]));
-}
-
-type ListProps = { title: string; ridings: Neighbour[]; names: Map<number, Name> };
+type ListProps = { title: string; ridings: number[]; names: Map<number, RidingName> };
 
 function RidingList({ title, ridings, names }: ListProps) {
   const { lang } = useLang();
@@ -55,10 +21,10 @@ function RidingList({ title, ridings, names }: ListProps) {
     <div>
       <h3>{title}</h3>
       <ol className="similar-list">
-        {ridings.map((riding) => (
-          <li key={riding.fed23}>
-            <a href={`#/riding/${riding.fed23}`}>{names.get(riding.fed23)?.fed23_name}</a>{" "}
-            <span className="province">{provinceLabel(names.get(riding.fed23)?.province ?? "", lang)}</span>
+        {ridings.map((fed23) => (
+          <li key={fed23}>
+            <a href={`#/riding/${fed23}`}>{names.get(fed23)?.fed23_name}</a>{" "}
+            <span className="province">{provinceLabel(names.get(fed23)?.province ?? "", lang)}</span>
           </li>
         ))}
       </ol>
@@ -66,21 +32,16 @@ function RidingList({ title, ridings, names }: ListProps) {
   );
 }
 
-type Props = { con: AsyncDuckDBConnection; fed23: number };
-
-export default function SimilarRidings({ con, fed23 }: Props) {
+export default function SimilarRidings({ similar }: { similar: Record<string, Neighbours> }) {
   const { t } = useLang();
-  const [ridings, setRidings] = useState<Map<number, RidingFeatures> | null>(null);
-  const [names, setNames] = useState<Map<number, Name>>(new Map());
+  const [names, setNames] = useState<Map<number, RidingName> | null>(null);
   const [topic, setTopic] = useState(TOPICS[0]);
 
   useEffect(() => {
-    loadFeatures(con).then(setRidings);
-    loadNames(con).then(setNames);
-  }, [con]);
+    loadRidingNames().then(setNames);
+  }, []);
 
-  if (ridings === null || !ridings.has(fed23)) return null;
-  const ranked = rankRidings(fed23, ridings, featureWeights(topic.themes));
+  if (names === null || !(topic.code in similar)) return null;
 
   return (
     <section id="similar" className="similar">
@@ -101,12 +62,12 @@ export default function SimilarRidings({ con, fed23 }: Props) {
       <div className="similar-columns">
         <RidingList
           title={t("Most similar", "Les plus semblables")}
-          ridings={ranked.slice(0, LIST_LENGTH)}
+          ridings={similar[topic.code].similar}
           names={names}
         />
         <RidingList
           title={t("Most different", "Les plus différentes")}
-          ridings={ranked.slice(-LIST_LENGTH).reverse()}
+          ridings={similar[topic.code].different}
           names={names}
         />
       </div>

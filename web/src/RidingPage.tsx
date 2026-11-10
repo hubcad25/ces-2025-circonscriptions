@@ -1,5 +1,5 @@
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { loadRiding, type RidingData } from "./data";
 import RidingChart, {
   chartWidth,
   LABEL_WIDTH,
@@ -12,7 +12,6 @@ import { useLang } from "./i18n";
 import { provinceName } from "./provinces";
 import { type Category, DEFAULT_QUESTION, type Question, QUESTIONS } from "./questions";
 import QuestionSelect from "./QuestionSelect";
-import ridingQuery from "./riding.sql?raw";
 import RidingSearch from "./RidingSearch";
 import SimilarRidings from "./SimilarRidings";
 
@@ -30,13 +29,6 @@ export type Estimate = {
 };
 
 const percent = (share: number) => (100 * share).toFixed(1);
-
-async function loadEstimates(con: AsyncDuckDBConnection, fed23: number): Promise<Estimate[]> {
-  const statement = await con.prepare(ridingQuery);
-  const result = await statement.query(fed23);
-  await statement.close();
-  return result.toArray().map((row) => row.toJSON() as Estimate);
-}
 
 type ChartProps = { question: Question; categories: Category[]; estimates: Estimate[] };
 
@@ -166,18 +158,17 @@ function scrollToSection(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
-type Props = { con: AsyncDuckDBConnection; fed23: number };
-
-export default function RidingPage({ con, fed23 }: Props) {
+export default function RidingPage({ fed23 }: { fed23: number }) {
   const { lang, t } = useLang();
-  const [estimates, setEstimates] = useState<Estimate[] | null>(null);
+  // Undefined while loading, null for an unknown riding code.
+  const [riding, setRiding] = useState<RidingData | null | undefined>(undefined);
   const [question, setQuestion] = useState(DEFAULT_QUESTION);
   // Grouped answers are easier to read; questions without groups ignore this choice.
   const [isGrouped, setGrouped] = useState(true);
 
   useEffect(() => {
-    loadEstimates(con, fed23).then(setEstimates);
-  }, [con, fed23]);
+    loadRiding(fed23).then(setRiding);
+  }, [fed23]);
 
   // A card of the profile opens its question in the answers section.
   function showQuestion(next: Question) {
@@ -185,10 +176,11 @@ export default function RidingPage({ con, fed23 }: Props) {
     scrollToSection("answers");
   }
 
-  if (estimates === null) return <p className="subtitle">{t("Loading riding...", "Chargement...")}</p>;
-  if (estimates.length === 0) {
+  if (riding === undefined) return <p className="subtitle">{t("Loading riding...", "Chargement...")}</p>;
+  if (riding === null) {
     return <p className="subtitle">{t(`Unknown riding ${fed23}.`, `Circonscription ${fed23} inconnue.`)}</p>;
   }
+  const { estimates } = riding;
 
   return (
     <div className="riding-page">
@@ -196,7 +188,7 @@ export default function RidingPage({ con, fed23 }: Props) {
         <a className="back" href="#/">
           {t("← All ridings", "← Toutes les circonscriptions")}
         </a>
-        <RidingSearch con={con} />
+        <RidingSearch />
       </div>
       <header className="riding-header">
         <RidingMinimap fed23={fed23} />
@@ -243,7 +235,7 @@ export default function RidingPage({ con, fed23 }: Props) {
           "Un graphique par réponse. Première ligne : l'estimation de la circonscription (point) et son intervalle à 90 % (barre), avec le résultat officiel en trait blanc pour le vote. Dessous : la province (point blanc) et le Canada (feuille d'érable). Valeurs en %.",
         )}
       </p>
-      <SimilarRidings con={con} fed23={fed23} />
+      <SimilarRidings similar={riding.similar} />
       <ModelCheck estimates={estimates} />
     </div>
   );

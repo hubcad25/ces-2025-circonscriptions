@@ -1,7 +1,5 @@
-import type { AsyncDuckDBConnection } from "@duckdb/duckdb-wasm";
 import { useEffect, useState } from "react";
 import AboutPage from "./AboutPage";
-import { openDatabase } from "./duckdb";
 import ExplorePage from "./ExplorePage";
 import { type Lang, LangContext, initialLang, saveLang } from "./i18n";
 import RidingPage from "./RidingPage";
@@ -13,24 +11,19 @@ const TABS = [
   { hash: "#/about", label: { en: "About", fr: "À propos" } },
 ];
 
-function Page({ con, hash }: { con: AsyncDuckDBConnection; hash: string }) {
+function Page({ hash }: { hash: string }) {
   const ridingMatch = hash.match(/^#\/riding\/(\d+)$/);
-  if (ridingMatch) return <RidingPage con={con} fed23={Number(ridingMatch[1])} />;
-  if (hash === "#/validation") return <ValidationPage con={con} />;
+  if (ridingMatch) return <RidingPage fed23={Number(ridingMatch[1])} />;
+  if (hash === "#/validation") return <ValidationPage />;
   if (hash === "#/about") return <AboutPage />;
-  return <ExplorePage con={con} />;
+  return <ExplorePage />;
 }
 
 export default function App() {
-  const [con, setCon] = useState<AsyncDuckDBConnection | null>(null);
   const [hash, setHash] = useState(window.location.hash || "#/");
   const [lang, setLang] = useState<Lang>(initialLang);
 
   useEffect(() => saveLang(lang), [lang]);
-
-  useEffect(() => {
-    openDatabase().then(setCon);
-  }, []);
 
   // Pages are addressed by the URL hash (#/riding/24059), which GitHub Pages serves as is.
   useEffect(() => {
@@ -56,11 +49,7 @@ export default function App() {
           </button>
         </nav>
         <main>
-          {con === null ? (
-            <p className="subtitle">{lang === "fr" ? "Chargement des données..." : "Loading data..."}</p>
-          ) : (
-            <Page con={con} hash={hash} />
-          )}
+          <Page hash={hash} />
         </main>
       </div>
     </LangContext.Provider>
