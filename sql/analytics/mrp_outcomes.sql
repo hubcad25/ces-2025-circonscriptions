@@ -403,6 +403,20 @@ economy_past_year AS (
         CASE code WHEN 1 THEN 'better' WHEN 2 THEN 'same' WHEN 3 THEN 'worse' END AS category
     FROM staging.responses
     WHERE variable = 'cps25_econ_retro'
+),
+
+-- Asked in Quebec only (see analytics.province_questions). "No opinion" (6) is dropped with
+-- "don't know" (5).
+quebec_sovereignty AS (
+    SELECT
+        'quebec_sovereignty' AS question,
+        respondent_id,
+        CASE code
+            WHEN 1 THEN 'very_favourable' WHEN 2 THEN 'somewhat_favourable'
+            WHEN 3 THEN 'somewhat_opposed' WHEN 4 THEN 'very_opposed'
+        END AS category
+    FROM staging.responses
+    WHERE variable = 'cps25_quebec_sov'
 )
 
 SELECT * FROM vote_post WHERE category IS NOT NULL
@@ -475,4 +489,6 @@ SELECT * FROM people_trusted WHERE category IS NOT NULL
 UNION ALL
 SELECT * FROM province_treatment WHERE category IS NOT NULL
 UNION ALL
-SELECT * FROM economy_past_year WHERE category IS NOT NULL;
+SELECT * FROM economy_past_year WHERE category IS NOT NULL
+UNION ALL
+SELECT * FROM quebec_sovereignty WHERE category IS NOT NULL;

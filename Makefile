@@ -50,6 +50,7 @@ mrp:
 	uv run python -m pipeline.mrp people_trusted
 	uv run python -m pipeline.mrp province_treatment
 	uv run python -m pipeline.mrp economy_past_year
+	uv run python -m pipeline.mrp quebec_sovereignty
 
 export:
 	uv run python -m pipeline.export

@@ -4,6 +4,7 @@ CREATE SCHEMA IF NOT EXISTS analytics;
 -- every census cell weighted by its adult population, draw by draw, then summarized like
 -- analytics.fed_summaries. Ordinal questions also get their grouped answers and their national
 -- mean position on the scale (category "mean"), the reference the map compares ridings with.
+-- Questions asked in one province only have no national share.
 CREATE OR REPLACE TABLE analytics.national_summaries AS
 WITH demographic_cells AS (
     SELECT fed13, age_group, gender, education, language, sum(n) AS n
@@ -20,6 +21,8 @@ national_draws AS (
     FROM analytics.mrp_draws AS d
     INNER JOIN demographic_cells AS c
         USING (fed13, age_group, gender, education, language)
+    ANTI JOIN analytics.province_questions AS q
+        USING (question)
     GROUP BY d.question, d.draw, d.category
 ),
 

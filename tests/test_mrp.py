@@ -21,3 +21,24 @@ def test_scale_ranks_run_from_one_without_gaps(con):
         )
     """).fetchone()[0]
     assert broken == 0
+
+
+def test_province_questions_stay_in_their_province(con):
+    outside = con.execute("""
+        SELECT count(*)
+        FROM analytics.fed_summaries AS s
+        INNER JOIN analytics.province_questions AS q
+            USING (question)
+        WHERE s.fed23 // 1000 <> q.province_code
+    """).fetchone()[0]
+    assert outside == 0
+
+
+def test_province_questions_have_no_national_share(con):
+    national = con.execute("""
+        SELECT count(*)
+        FROM analytics.national_summaries
+        SEMI JOIN analytics.province_questions
+            USING (question)
+    """).fetchone()[0]
+    assert national == 0

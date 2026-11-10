@@ -28,6 +28,16 @@ const CITIES: { name: Text; bounds: maplibregl.LngLatBoundsLike }[] = [
   { name: { en: "Montreal", fr: "Montréal" }, bounds: [[-74.0, 45.4], [-73.45, 45.72]] },
 ];
 
+// The first view of a question asked in one province only.
+const PROVINCE_BOUNDS: Record<string, maplibregl.LngLatBoundsLike> = {
+  QC: [
+    [-79.8, 44.9],
+    [-57.1, 62.6],
+  ],
+};
+
+const homeBounds = (province?: string) => (province && PROVINCE_BOUNDS[province]) || CANADA;
+
 const FIT_PADDING = 16;
 
 export const BACKGROUND = "#15171a";
@@ -66,7 +76,7 @@ type Comparison = {
   ends: [string, string];
 };
 
-type Props = { ridings: Located[]; color: string; comparison?: Comparison };
+type Props = { ridings: Located[]; color: string; comparison?: Comparison; province?: string };
 
 
 // Color stops are [position, color], with positions from 0 (low) to 1 (high).
@@ -286,7 +296,7 @@ function popupCard(
       ]
     : [
         ["map-card-name", name],
-        ["map-card-meta", t("Filtered out", "Exclue par le filtre")],
+        ["map-card-meta", t("No estimate shown", "Aucune estimation affichée")],
       ];
   lines.push(["map-card-hint", t("Click to open the riding page", "Cliquer pour ouvrir la page")]);
   const card = document.createElement("div");
@@ -361,21 +371,21 @@ export const cityLabel = (lang: Lang): maplibregl.ExpressionSpecification => [
   ["get", "name"],
 ];
 
-export default function RidingMap({ ridings, color, comparison }: Props) {
+export default function RidingMap({ ridings, color, comparison, province }: Props) {
   const { lang, t } = useLang();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const loaded = useRef(false);
   const [isLoading, setLoading] = useState(true);
   // The map loads after the first render; it then needs the latest filters, not the first ones.
-  const latest = useRef({ ridings, color, comparison, lang, t });
-  latest.current = { ridings, color, comparison, lang, t };
+  const latest = useRef({ ridings, color, comparison, province, lang, t });
+  latest.current = { ridings, color, comparison, province, lang, t };
 
   useEffect(() => {
     const instance = new maplibregl.Map({
       container: container.current!,
       style: STYLE,
-      bounds: CANADA,
+      bounds: homeBounds(latest.current.province),
       fitBoundsOptions: { padding: FIT_PADDING },
       renderWorldCopies: false,
       maxZoom: 11,
@@ -393,7 +403,7 @@ export default function RidingMap({ ridings, color, comparison }: Props) {
     // shrinks to a strip. The globe keeps areas close to their true size.
     instance.on("style.load", () => {
       instance.setProjection({ type: "globe" });
-      instance.fitBounds(CANADA, { padding: FIT_PADDING, animate: false });
+      instance.fitBounds(homeBounds(latest.current.province), { padding: FIT_PADDING, animate: false });
     });
 
     instance.on("load", async () => {
@@ -447,6 +457,10 @@ export default function RidingMap({ ridings, color, comparison }: Props) {
   useEffect(() => {
     if (loaded.current) map.current!.setLayoutProperty("places", "text-field", cityLabel(lang));
   }, [lang]);
+
+  useEffect(() => {
+    if (loaded.current) map.current!.fitBounds(homeBounds(province), { padding: FIT_PADDING });
+  }, [province]);
 
   const zoomTo = (bounds: maplibregl.LngLatBoundsLike) =>
     map.current?.fitBounds(bounds, { padding: FIT_PADDING });

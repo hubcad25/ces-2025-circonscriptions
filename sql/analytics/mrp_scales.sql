@@ -146,6 +146,10 @@ FROM (
         ('province_treatment', 3, 'better', 'high'),
         ('economy_past_year', 1, 'worse', 'low'),
         ('economy_past_year', 2, 'same', 'middle'),
-        ('economy_past_year', 3, 'better', 'high')
+        ('economy_past_year', 3, 'better', 'high'),
+        ('quebec_sovereignty', 1, 'very_opposed', 'low'),
+        ('quebec_sovereignty', 2, 'somewhat_opposed', 'low'),
+        ('quebec_sovereignty', 3, 'somewhat_favourable', 'high'),
+        ('quebec_sovereignty', 4, 'very_favourable', 'high')
 ) AS scales (question, rank, category, side)
 ORDER BY question, rank;

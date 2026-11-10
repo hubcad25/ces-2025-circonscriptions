@@ -18,6 +18,9 @@ export type Question = {
   groups?: Category[];
   // What leaning toward each end of the scale means, for the map legend.
   ends?: [Text, Text];
+  // Set for a question asked in one province only: there are no estimates elsewhere, and its
+  // ridings are compared with that province rather than with Canada.
+  province?: string;
 };
 
 const VOTE_CATEGORIES: Category[] = PARTIES;
@@ -409,6 +412,24 @@ export const QUESTIONS: Question[] = [
     groups: AGREEMENT_GROUPS,
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
+  },
+  {
+    code: "quebec_sovereignty",
+    label: { en: "Are you favourable or opposed to Quebec sovereignty?", fr: "Êtes-vous favorable ou opposé(e) à la souveraineté du Québec?" },
+    theme: { en: "Quebec and the federation", fr: "Québec et fédération" },
+    categories: [
+      { code: "very_opposed", label: { en: "Very opposed", fr: "Très opposé(e)" }, color: LOW },
+      { code: "somewhat_opposed", label: { en: "Somewhat opposed", fr: "Plutôt opposé(e)" }, color: "#84adff" },
+      { code: "somewhat_favourable", label: { en: "Somewhat favourable", fr: "Plutôt favorable" }, color: "#fdb022" },
+      { code: "very_favourable", label: { en: "Very favourable", fr: "Très favorable" }, color: HIGH },
+    ],
+    groups: [
+      { code: "grouped_low", label: { en: "Opposed", fr: "Opposé(e)" }, color: LOW },
+      { code: "grouped_high", label: { en: "Favourable", fr: "Favorable" }, color: HIGH },
+    ],
+    isOrdinal: true,
+    ends: [{ en: "Opposed to sovereignty", fr: "Opposé(e) à la souveraineté" }, { en: "Favourable to sovereignty", fr: "Favorable à la souveraineté" }],
+    province: "QC",
   },
   {
     code: "vote_post",

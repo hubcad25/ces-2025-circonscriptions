@@ -49,16 +49,30 @@ ORDER BY fed13, age_group, gender, education, language, past_vote
 """
 
 
-def load_survey(database: Path, question: str) -> tuple[pd.DataFrame, list[int]]:
+def load_survey(database: Path, question: str) -> pd.DataFrame:
     with duckdb.connect(database, read_only=True) as con:
-        survey = con.execute(SURVEY_QUERY, [question]).df()
-        ridings = con.sql("SELECT DISTINCT fed13 FROM analytics.census_cells ORDER BY fed13")
-        return survey, [row[0] for row in ridings.fetchall()]
+        return con.execute(SURVEY_QUERY, [question]).df()
 
 
 def load_cells(database: Path) -> pd.DataFrame:
     with duckdb.connect(database, read_only=True) as con:
         return con.sql(CELLS_QUERY).df()
+
+
+def load_province(database: Path, question: str) -> int | None:
+    with duckdb.connect(database, read_only=True) as con:
+        row = con.execute(
+            "SELECT province_code FROM analytics.province_questions WHERE question = ?",
+            [question],
+        ).fetchone()
+    return row[0] if row else None
+
+
+def in_province(frame: pd.DataFrame, province: int | None) -> pd.DataFrame:
+    # The first two digits of a riding code are the province code.
+    if province is None:
+        return frame
+    return frame[frame["fed13"] // 1000 == province]
 
 
 def load_predictors(database: Path, ridings: list[int]) -> np.ndarray:
@@ -96,7 +110,10 @@ def encode(frame: pd.DataFrame, ridings: list[int]) -> dict[str, np.ndarray]:
 
 def effect_sizes(ridings: list[int]) -> dict[str, int]:
     sizes = {group: len(values) for group, values in group_levels(ridings).items()}
-    sizes["province"] = len(provinces(ridings))
+    # A question asked in one province has a single province effect, which would only duplicate
+    # the intercept (or the cutpoints) and slow the chains down.
+    if len(provinces(ridings)) > 1:
+        sizes["province"] = len(provinces(ridings))
     return sizes
 
 
@@ -334,8 +351,11 @@ def save_draws(database: Path, draws: pd.DataFrame) -> None:
 
 
 def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
-    survey, ridings = load_survey(database, question)
-    cells = load_cells(database)
+    # A question asked in one province is fitted and predicted there only.
+    province = load_province(database, question)
+    survey = in_province(load_survey(database, question), province)
+    cells = in_province(load_cells(database), province)
+    ridings = cells["fed13"].unique().tolist()
     scale = load_scale(database, question)
     is_ordinal = scale is not None
     categories = category_order(survey["category"], scale)
