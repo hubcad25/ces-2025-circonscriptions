@@ -80,6 +80,7 @@ export default function ExplorePage() {
   );
 
   const estimates = allEstimates.filter((estimate) => matches(estimate, filter));
+  const isLoading = allEstimates.length === 0;
 
   const categories = displayCategories(question, display);
 
@@ -149,9 +150,8 @@ export default function ExplorePage() {
         </div>
       </div>
       <div className="explore-body">
-        {allEstimates.length === 0 ? (
-          <p className="stats">{t("Loading...", "Chargement...")}</p>
-        ) : estimates.length === 0 ? (
+        {/* The map is created while the estimates load: it takes longer than the data. */}
+        {!isLoading && estimates.length === 0 ? (
           <p className="stats">{t("No riding matches.", "Aucune circonscription ne correspond.")}</p>
         ) : view === "map" ? (
           <RidingMap
@@ -160,6 +160,8 @@ export default function ExplorePage() {
             comparison={comparison}
             province={question.province}
           />
+        ) : isLoading ? (
+          <p className="stats">{t("Loading...", "Chargement...")}</p>
         ) : (
           <EstimateTable
             estimates={estimates}

@@ -1,7 +1,6 @@
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
-import type { FeatureCollection, MultiPolygon } from "geojson";
 import { Protocol } from "pmtiles";
 import { dataUrl } from "./data";
 import { type Lang, type Text, useLang } from "./i18n";
@@ -43,18 +42,13 @@ export const BACKGROUND = "#15171a";
 const LOW_COLOR = "#eef0f2";
 const FILTERED_OUT_COLOR = "#2a2d31";
 
-// A minimal style: only city and town names come from OpenFreeMap (free vector tiles, no API
-// key), so that zooming in does not bring roads, buildings or parks.
-export const STYLE: maplibregl.StyleSpecification = {
+// The Explore map has no external basemap: only the names of the largest municipalities
+// (cities.geojson, written by `make export`), so that nothing slows its first display. The font
+// is served with the site and covers Latin-1, enough for every name.
+const EXPLORE_STYLE: maplibregl.StyleSpecification = {
   version: 8,
-  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
-  sources: {
-    openmaptiles: {
-      type: "vector",
-      url: "https://tiles.openfreemap.org/planet",
-      attribution: "OpenFreeMap © OpenMapTiles, data © OpenStreetMap contributors",
-    },
-  },
+  glyphs: `${new URL(import.meta.env.BASE_URL, window.location.href).href}fonts/{fontstack}/{range}.pbf`,
+  sources: {},
   layers: [{ id: "background", type: "background", paint: { "background-color": BACKGROUND } }],
 };
 
@@ -310,9 +304,7 @@ function popupCard(
   return card;
 }
 
-async function addLayers(map: maplibregl.Map) {
-  const canada: FeatureCollection = await (await fetch(dataUrl("canada.geojson"))).json();
-
+function addLayers(map: maplibregl.Map) {
   // The tiles are cut by the export (tippecanoe) up to zoom 8; past it, MapLibre scales them.
   // promoteId lets the estimates be attached to each riding by its code.
   map.addSource("ridings", {
@@ -341,43 +333,34 @@ async function addLayers(map: maplibregl.Map) {
       "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0],
     },
   });
+  map.addSource("cities", {
+    type: "geojson",
+    data: dataUrl("cities.geojson"),
+    attribution: "Statistics Canada",
+  });
   map.addLayer({
     id: "places",
     type: "symbol",
-    source: "openmaptiles",
-    "source-layer": "place",
-    // Cities from the start, towns once zoomed in; places outside Canada are left out.
-    filter: [
-      "all",
-      ["within", canada.features[0].geometry as MultiPolygon],
-      [
-        "any",
-        ["==", ["get", "class"], "city"],
-        ["all", ["==", ["get", "class"], "town"], [">=", ["zoom"], 7]],
-      ],
-    ],
+    source: "cities",
     layout: {
-      "text-field": cityLabel("en"),
+      "text-field": cityName("en"),
       "text-font": ["Noto Sans Regular"],
       "text-size": ["interpolate", ["linear"], ["zoom"], 3, 11, 9, 14],
+      // Larger cities are placed first; the smaller ones appear once zooming makes room.
+      "symbol-sort-key": ["-", ["get", "population"]],
     },
     paint: { "text-color": "#ffffff", "text-halo-color": BACKGROUND, "text-halo-width": 1.5 },
   });
 }
 
-// OpenFreeMap names places in many languages; "name" is the local name.
-export const cityLabel = (lang: Lang): maplibregl.ExpressionSpecification => [
-  "coalesce",
-  ["get", `name:${lang}`],
-  ["get", "name"],
-];
+const cityName = (lang: Lang): maplibregl.ExpressionSpecification => ["get", `name_${lang}`];
 
 export default function RidingMap({ ridings, color, comparison, province }: Props) {
   const { lang, t } = useLang();
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const loaded = useRef(false);
-  const [isLoading, setLoading] = useState(true);
+  const [isMapLoading, setMapLoading] = useState(true);
   // The map loads after the first render; it then needs the latest filters, not the first ones.
   const latest = useRef({ ridings, color, comparison, province, lang, t });
   latest.current = { ridings, color, comparison, province, lang, t };
@@ -385,7 +368,7 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
   useEffect(() => {
     const instance = new maplibregl.Map({
       container: container.current!,
-      style: STYLE,
+      style: EXPLORE_STYLE,
       bounds: homeBounds(latest.current.province),
       fitBoundsOptions: { padding: FIT_PADDING },
       renderWorldCopies: false,
@@ -407,12 +390,12 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
       instance.fitBounds(homeBounds(latest.current.province), { padding: FIT_PADDING, animate: false });
     });
 
-    instance.on("load", async () => {
-      await addLayers(instance);
+    instance.on("load", () => {
+      addLayers(instance);
       loaded.current = true;
       showEstimates(instance, latest.current);
-      instance.setLayoutProperty("places", "text-field", cityLabel(latest.current.lang));
-      instance.once("idle", () => setLoading(false));
+      instance.setLayoutProperty("places", "text-field", cityName(latest.current.lang));
+      instance.once("idle", () => setMapLoading(false));
     });
 
     let hovered: number | null = null;
@@ -456,7 +439,7 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
   }, [ridings, color, comparison]);
 
   useEffect(() => {
-    if (loaded.current) map.current!.setLayoutProperty("places", "text-field", cityLabel(lang));
+    if (loaded.current) map.current!.setLayoutProperty("places", "text-field", cityName(lang));
   }, [lang]);
 
   useEffect(() => {
@@ -466,6 +449,8 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
   const zoomTo = (bounds: maplibregl.LngLatBoundsLike) =>
     map.current?.fitBounds(bounds, { padding: FIT_PADDING });
 
+  // The map is created before the estimates arrive; until then, it has no colors or legend.
+  const isLoading = isMapLoading || ridings.length === 0;
   const { low, high, stops } = colorScale({ ridings, color, comparison });
   return (
     <div className="map-wrap">
@@ -480,13 +465,15 @@ export default function RidingMap({ ridings, color, comparison, province }: Prop
             </button>
           ))}
         </div>
-        <div className="map-legend">
-          {comparison ? (
-            <ComparisonLegend {...comparison} low={low} high={high} />
-          ) : (
-            <ShareLegend low={low} high={high} stops={stops} />
-          )}
-        </div>
+        {!isLoading && (
+          <div className="map-legend">
+            {comparison ? (
+              <ComparisonLegend {...comparison} low={low} high={high} />
+            ) : (
+              <ShareLegend low={low} high={high} stops={stops} />
+            )}
+          </div>
+        )}
       </div>
       {comparison ? <ComparisonNotes {...comparison} /> : <ShareNotes />}
     </div>

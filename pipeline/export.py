@@ -42,19 +42,6 @@ FROM parts
 GROUP BY part.path[1]
 """
 
-# Canada's outline, coarse (3 km), used by the map to keep place names inside Canada.
-CANADA_QUERY = """
-SELECT ST_Transform(
-    ST_SimplifyPreserveTopology(
-        ST_Union_Agg(ST_SimplifyPreserveTopology(geom::GEOMETRY, 500)), 3000
-    ),
-    'EPSG:3347',
-    'EPSG:4326',
-    always_xy := true
-) AS geom
-FROM staging.ridings_2023
-"""
-
 
 # Vector tiles cut ahead of time, so that the browser does not have to cut the GeoJSON on every
 # zoom. Zoom 8 is already finer than the 500 m simplification; MapLibre scales it past that.
@@ -172,7 +159,8 @@ def export(database: Path, destination: Path) -> None:
         export_ridings(con, estimates, destination)
         export_validation(estimates, destination)
         con.execute("LOAD spatial")
-        for name, query_text in [("ridings", RIDINGS_QUERY), ("canada", CANADA_QUERY)]:
+        cities_query = (QUERIES / "cities.sql").read_text()
+        for name, query_text in [("ridings", RIDINGS_QUERY), ("cities", cities_query)]:
             con.execute(f"""
                 COPY ({query_text}) TO '{destination / f"{name}.geojson"}'
                 WITH (
