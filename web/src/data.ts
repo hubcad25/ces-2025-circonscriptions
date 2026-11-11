@@ -127,3 +127,34 @@ export async function loadValidation(question: string, party: string): Promise<V
 }
 
 export const loadSurveyMeans = () => fetchJson<SurveyMean[]>("survey_means.json");
+
+// The attitude dimensions: [question, loading] and [fed23, mean, low, high] by dimension, and
+// the score of Canada and of each province by dimension and area.
+type DimensionFile = {
+  loadings: Record<string, [string, number][]>;
+  ridings: Record<string, [number, number, number, number][]>;
+  references: Record<string, Record<string, number>>;
+};
+
+export type DimensionData = { loadings: [string, number][]; ridings: Estimate[] };
+
+// One row per riding for the Dimensions map, with the national and provincial scores.
+export async function loadDimension(dimension: number): Promise<DimensionData> {
+  const [names, file] = await Promise.all([
+    loadRidingNames(),
+    fetchJson<DimensionFile>("dimensions.json"),
+  ]);
+  const references = file.references[dimension];
+  const ridings = file.ridings[dimension].map(([fed23, mean, low, high]) => {
+    const riding = names.get(fed23)!;
+    return {
+      ...riding,
+      estimate_mean: mean,
+      estimate_low: low,
+      estimate_high: high,
+      national: references.canada,
+      provincial: references[riding.province],
+    };
+  });
+  return { loadings: file.loadings[dimension], ridings };
+}

@@ -574,10 +574,10 @@ td {
   font-size: 11px;
 }
 
-/* Explore and the riding page use the whole width of the window, so that they look the same on a
-   laptop and on a large monitor. The rule matches .explore, which is there from the first render,
+/* Explore, the riding page and Dimensions use the whole width of the window, so that they look the same on a
+   laptop and on a large monitor. The rule matches the page class, which is there from the first render,
    rather than the map, which only appears once the data loads. */
-main:has(.explore, .riding-page) {
+main:has(.explore, .riding-page, .dimensions) {
   max-width: none;
 }
 
@@ -1262,4 +1262,130 @@ p.legend-caption {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A dimension score has no answer scale: only its two ends above the color bar. */
+.score-legend {
+  width: 520px;
+  max-width: 100%;
+}
+
+.score-legend .scale-ends {
+  margin: 0 0 6px;
+}
+
+.score-legend .legend-bar {
+  display: block;
+}
+
+.score-reference {
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* Like Explore, the page fills the window: the controls at the top, then the attitudes, which
+   scroll in their own column, beside the map with its legend in view. Stacked on narrow screens. */
+main:has(.dimensions) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.dimensions {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 520px;
+}
+
+.dimensions-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(340px, 480px) minmax(0, 1fr);
+  gap: 24px;
+  padding-bottom: 16px;
+}
+
+.dimensions-side {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 8px;
+}
+
+@media (max-width: 1000px) {
+  .dimensions {
+    height: auto;
+  }
+
+  .dimensions-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dimensions-side {
+    overflow: visible;
+  }
+
+  .dimension-map {
+    height: 75vh;
+  }
+}
+
+.loadings-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.loadings ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The headline in the middle, with its bar growing outward on the left or on the right. */
+.loadings li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.loadings li.weak {
+  opacity: 0.45;
+}
+
+.loading-statement {
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+}
+
+.loading-side {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  gap: 6px;
+}
+
+.loading-side.left {
+  flex-direction: row-reverse;
+}
+
+.loading-bar {
+  height: 8px;
+  background: var(--party);
+}
+
+.loading-value {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dimension-map {
+  min-height: 0;
 }

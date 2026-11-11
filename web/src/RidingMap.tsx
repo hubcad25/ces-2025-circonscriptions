@@ -61,12 +61,14 @@ type Located = {
 };
 
 // A comparison is set for mean positions on an answer scale: the mean of the reference (Canada,
-// or the chosen province), and the answer labels, ranked from 1.
+// or the chosen province), and the answer labels, ranked from 1. A dimension score has no answer
+// scale, so no labels, and its own end colors.
 type Comparison = {
   reference: number;
   referenceName: string;
-  scaleLabels: string[];
+  scaleLabels?: string[];
   ends: [string, string];
+  colors?: [string, string];
 };
 
 type Props = { ridings: Located[]; color: string; comparison?: Comparison; province?: string };
@@ -83,11 +85,11 @@ const COMPARISON_MIDDLE = "#3d4248";
 
 // The middle fifth of the scale stays grey, so that small gaps read as close to the reference
 // on the map and in the legend, rather than as faint blue or orange.
-const COMPARISON_STOPS: Stops = [
-  [0, LOW],
+const comparisonStops = ([low, high]: [string, string] = [LOW, HIGH]): Stops => [
+  [0, low],
   [0.4, COMPARISON_MIDDLE],
   [0.6, COMPARISON_MIDDLE],
-  [1, HIGH],
+  [1, high],
 ];
 
 // One extreme riding would otherwise push every other riding toward the middle color; the
@@ -119,7 +121,7 @@ function colorScale({ ridings, color, comparison }: Props): Scale {
   return {
     low: comparison.reference - widest,
     high: comparison.reference + widest,
-    stops: COMPARISON_STOPS,
+    stops: comparisonStops(comparison.colors),
   };
 }
 
@@ -181,11 +183,12 @@ type LegendProps = Comparison & { low: number; high: number };
 // the color band drawn around it at its true width on the scale.
 function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
   const { reference, referenceName, scaleLabels, ends } = comparison;
+  if (!scaleLabels) return <ScoreLegend {...comparison} low={low} high={high} />;
   const position = (rank: number) => (100 * (rank - 1)) / (scaleLabels.length - 1);
   const band = {
     left: `${position(low)}%`,
     width: `${position(high) - position(low)}%`,
-    background: gradient(COMPARISON_STOPS),
+    background: gradient(comparisonStops()),
   };
   return (
     <div className="legend scale-position">
@@ -214,6 +217,25 @@ function ComparisonLegend({ low, high, ...comparison }: LegendProps) {
   );
 }
 
+// A dimension score: the color bar between its two ends, centered on the reference.
+function ScoreLegend({ low, high, reference, referenceName, ends, colors }: LegendProps) {
+  const stops = comparisonStops(colors);
+  return (
+    <div className="legend score-legend">
+      <div className="scale-ends">
+        <span style={{ color: stops[0][1] }}>
+          ← {ends[0]} ({signed(low - reference)})
+        </span>
+        <span style={{ color: stops[3][1] }}>
+          {ends[1]} ({signed(high - reference)}) →
+        </span>
+      </div>
+      <div className="legend-bar" style={{ background: gradient(stops) }} />
+      <div className="score-reference">{referenceName}</div>
+    </div>
+  );
+}
+
 function ShareLegend({ low, high, stops }: Scale) {
   return (
     <div className="legend">
@@ -229,14 +251,19 @@ function ShareLegend({ low, high, stops }: Scale) {
 // Reading notes, shown under the map.
 function ComparisonNotes({ referenceName, scaleLabels }: Comparison) {
   const { t } = useLang();
-  const top = scaleLabels[scaleLabels.length - 1];
+  const top = scaleLabels?.[scaleLabels.length - 1];
   return (
     <ul className="legend-caption">
       <li>
-        {t(
-          `Each riding's average answer, compared with ${referenceName}'s. +0.10: 0.10 point closer to "${top}".`,
-          `Réponse moyenne de chaque circonscription, comparée à celle de ${referenceName}. +0,10 : 0,10 point plus près de « ${top} ».`,
-        )}
+        {top
+          ? t(
+              `Each riding's average answer, compared with ${referenceName}'s. +0.10: 0.10 point closer to "${top}".`,
+              `Réponse moyenne de chaque circonscription, comparée à celle de ${referenceName}. +0,10 : 0,10 point plus près de « ${top} ».`,
+            )
+          : t(
+              `Each riding's score, compared with ${referenceName}'s. +0.10: a tenth of the typical spread between individual respondents.`,
+              `Score de chaque circonscription, comparé à celui de ${referenceName}. +0,10 : un dixième de l'écart type entre les répondants.`,
+            )}
       </li>
       <li>
         {t(

@@ -21,6 +21,8 @@ export type Question = {
   // The plain-language title of a riding page card; {more} becomes "more" or "less", in the
   // color of the end the riding leans toward.
   headline?: Text;
+  // The high end of the scale as a short statement, for the list of the Dimensions page.
+  statement?: Text;
   // Set for a question asked in one province only: there are no estimates elsewhere, and its
   // ridings are compared with that province rather than with Canada.
   province?: string;
@@ -66,6 +68,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Less defence spending", fr: "Moins de dépenses en défense" }, { en: "More defence spending", fr: "Plus de dépenses en défense" }],
     headline: { en: "Want {more} defence spending", fr: "Veulent {more} de dépenses en défense" },
+    statement: { en: "More defence spending", fr: "Plus de dépenses en défense" },
   },
   {
     code: "spend_environment",
@@ -75,6 +78,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Less environment spending", fr: "Moins de dépenses en environnement" }, { en: "More environment spending", fr: "Plus de dépenses en environnement" }],
     headline: { en: "Want {more} environment spending", fr: "Veulent {more} de dépenses en environnement" },
+    statement: { en: "More environment spending", fr: "Plus de dépenses en environnement" },
   },
   {
     code: "decent_housing",
@@ -85,6 +89,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Government not responsible for housing", fr: "Le logement n'est pas la responsabilité de l'État" }, { en: "Government responsible for housing", fr: "Le logement est la responsabilité de l'État" }],
     headline: { en: "{more} likely to see housing as a government responsibility", fr: "{more} enclins à voir le logement comme une responsabilité de l'État" },
+    statement: { en: "Housing is a government responsibility", fr: "Le logement relève de l'État" },
   },
   {
     code: "spend_education",
@@ -94,6 +99,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Less education spending", fr: "Moins de dépenses en éducation" }, { en: "More education spending", fr: "Plus de dépenses en éducation" }],
     headline: { en: "Want {more} education spending", fr: "Veulent {more} de dépenses en éducation" },
+    statement: { en: "More education spending", fr: "Plus de dépenses en éducation" },
   },
   {
     code: "reduce_inequality",
@@ -104,6 +110,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Against reducing income gaps", fr: "Contre la réduction des écarts de revenus" }, { en: "For reducing income gaps", fr: "Pour la réduction des écarts de revenus" }],
     headline: { en: "{more} in favour of reducing income gaps", fr: "{more} favorables à la réduction des écarts de revenus" },
+    statement: { en: "Reduce income gaps", fr: "Réduire les écarts de revenus" },
   },
   {
     code: "private_jobs",
@@ -114,6 +121,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Government should create jobs", fr: "L'État devrait créer des emplois" }, { en: "Leave jobs to the private sector", fr: "Laisser les emplois au privé" }],
     headline: { en: "{more} likely to leave job creation to the private sector", fr: "{more} enclins à laisser la création d'emplois au privé" },
+    statement: { en: "Leave job creation to the private sector", fr: "Laisser la création d'emplois au privé" },
   },
   {
     code: "welfare_dependency",
@@ -124,6 +132,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Welfare state does not hurt", fr: "L'État-providence ne nuit pas" }, { en: "Welfare state makes people dependent", fr: "L'État-providence rend dépendant" }],
     headline: { en: "{more} likely to say welfare makes people dependent", fr: "{more} enclins à dire que l'État-providence rend dépendant" },
+    statement: { en: "Welfare makes people dependent", fr: "L'État-providence rend dépendant" },
   },
   {
     code: "economy_past_year",
@@ -137,6 +146,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Economy got worse", fr: "L'économie s'est détériorée" }, { en: "Economy got better", fr: "L'économie s'est améliorée" }],
     headline: { en: "{more} likely to say the economy got better", fr: "{more} enclins à dire que l'économie s'est améliorée" },
+    statement: { en: "The economy got better", fr: "L'économie s'est améliorée" },
   },
   {
     code: "trade_jobs",
@@ -147,6 +157,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Trade destroys jobs", fr: "Le commerce détruit des emplois" }, { en: "Trade creates jobs", fr: "Le commerce crée des emplois" }],
     headline: { en: "{more} likely to say trade creates jobs", fr: "{more} enclins à dire que le commerce crée des emplois" },
+    statement: { en: "Trade creates jobs", fr: "Le commerce crée des emplois" },
   },
   {
     code: "ties_us",
@@ -167,6 +178,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "More distant from the US", fr: "Plus distants des États-Unis" }, { en: "Closer to the US", fr: "Plus proches des États-Unis" }],
     headline: { en: "Want {more} closeness with the US", fr: "Veulent {more} de rapprochement avec les États-Unis" },
+    statement: { en: "Closer ties with the US", fr: "Se rapprocher des États-Unis" },
   },
   {
     code: "tariffs_us",
@@ -186,6 +198,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Oppose tariffs", fr: "Contre les tarifs" }, { en: "Support tariffs", fr: "Pour les tarifs" }],
     headline: { en: "{more} in favour of tariffs on the US", fr: "{more} favorables aux tarifs contre les États-Unis" },
+    statement: { en: "Tariffs on the US", fr: "Tarifs contre les États-Unis" },
   },
   {
     code: "spend_reconciliation",
@@ -195,6 +208,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Less reconciliation spending", fr: "Moins de dépenses en réconciliation" }, { en: "More reconciliation spending", fr: "Plus de dépenses en réconciliation" }],
     headline: { en: "Want {more} reconciliation spending", fr: "Veulent {more} de dépenses en réconciliation" },
+    statement: { en: "More reconciliation spending", fr: "Plus de dépenses en réconciliation" },
   },
   {
     code: "indigenous_deserve",
@@ -205,6 +219,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Got what they deserve", fr: "Ont reçu ce qu'ils méritent" }, { en: "Got less than they deserve", fr: "Ont reçu moins que ce qu'ils méritent" }],
     headline: { en: "{more} likely to say Indigenous peoples have been short-changed", fr: "{more} enclins à dire que les Autochtones ont été lésés" },
+    statement: { en: "Indigenous peoples have been short-changed", fr: "Les Autochtones ont été lésés" },
   },
   {
     code: "ban_abortion",
@@ -218,6 +233,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Against a ban", fr: "Contre l'interdiction" }, { en: "For a ban", fr: "Pour l'interdiction" }],
     headline: { en: "{more} in favour of banning abortion", fr: "{more} favorables à l'interdiction de l'avortement" },
+    statement: { en: "Ban abortion", fr: "Interdire l'avortement" },
   },
   {
     code: "women_home",
@@ -228,6 +244,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} likely to say society would be better off if fewer women worked", fr: "{more} enclins à dire que la société irait mieux si moins de femmes travaillaient" },
+    statement: { en: "Society would be better off if fewer women worked", fr: "La société irait mieux si moins de femmes travaillaient" },
   },
   {
     code: "religion_importance",
@@ -246,6 +263,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Religion less important", fr: "Religion moins importante" }, { en: "Religion more important", fr: "Religion plus importante" }],
     headline: { en: "Religion is {more} important in their life", fr: "La religion est {more} importante dans leur vie" },
+    statement: { en: "Religion is important in their life", fr: "La religion est importante dans leur vie" },
   },
   {
     code: "equal_rights",
@@ -256,6 +274,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Equal rights have not gone too far", fr: "L'égalité des droits n'est pas allée trop loin" }, { en: "Equal rights have gone too far", fr: "L'égalité des droits est allée trop loin" }],
     headline: { en: "{more} likely to say equal rights have gone too far", fr: "{more} enclins à dire que l'égalité des droits est allée trop loin" },
+    statement: { en: "Equal rights have gone too far", fr: "L'égalité des droits est allée trop loin" },
   },
   {
     code: "newer_lifestyles",
@@ -266,6 +285,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} likely to say newer lifestyles harm society", fr: "{more} enclins à dire que les nouveaux modes de vie nuisent à la société" },
+    statement: { en: "Newer lifestyles harm society", fr: "Les nouveaux modes de vie nuisent à la société" },
   },
   {
     code: "family_values",
@@ -276,6 +296,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} attached to traditional family values", fr: "{more} attachés aux valeurs familiales traditionnelles" },
+    statement: { en: "Traditional family values", fr: "Valeurs familiales traditionnelles" },
   },
   {
     code: "climate_change",
@@ -288,6 +309,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Not happening", fr: "Pas réels" }, { en: "Happening", fr: "Réels" }],
     headline: { en: "{more} likely to say climate change is happening", fr: "{more} enclins à dire que les changements climatiques sont réels" },
+    statement: { en: "Climate change is happening", fr: "Les changements climatiques sont réels" },
   },
   {
     code: "democracy_satisfaction",
@@ -306,6 +328,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Less satisfied", fr: "Moins satisfaits" }, { en: "More satisfied", fr: "Plus satisfaits" }],
     headline: { en: "{more} satisfied with democracy", fr: "{more} satisfaits de la démocratie" },
+    statement: { en: "Satisfied with democracy", fr: "Satisfaits de la démocratie" },
   },
   {
     code: "politicians_trustworthy",
@@ -316,6 +339,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Distrust politicians", fr: "Méfiance envers les politiciens" }, { en: "Trust politicians", fr: "Confiance envers les politiciens" }],
     headline: { en: "{more} trusting of politicians", fr: "Font {more} confiance aux politiciens" },
+    statement: { en: "Politicians can be trusted", fr: "On peut faire confiance aux politiciens" },
   },
   {
     code: "politicians_lie",
@@ -326,6 +350,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} likely to say politicians lie to get elected", fr: "{more} enclins à dire que les politiciens mentent pour être élus" },
+    statement: { en: "Politicians lie to get elected", fr: "Les politiciens mentent pour être élus" },
   },
   {
     code: "strong_leader",
@@ -336,6 +361,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Against a strong leader", fr: "Contre un chef fort" }, { en: "For a strong leader", fr: "Pour un chef fort" }],
     headline: { en: "{more} in favour of a strong leader who bends the rules", fr: "{more} favorables à un chef fort qui contourne les règles" },
+    statement: { en: "A strong leader who bends the rules", fr: "Un chef fort qui contourne les règles" },
   },
   {
     code: "no_say",
@@ -350,6 +376,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Have a say", fr: "Ont leur mot à dire" }, { en: "No say", fr: "N'ont pas leur mot à dire" }],
     headline: { en: "{more} likely to feel powerless over government", fr: "{more} enclins à se sentir impuissants face au gouvernement" },
+    statement: { en: "Powerless over government", fr: "Impuissants face au gouvernement" },
   },
   {
     code: "people_trusted",
@@ -362,6 +389,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Be careful", fr: "Prudence" }, { en: "People can be trusted", fr: "Confiance envers les gens" }],
     headline: { en: "{more} trusting of other people", fr: "Font {more} confiance aux autres" },
+    statement: { en: "Most people can be trusted", fr: "On peut faire confiance à la plupart des gens" },
   },
   {
     code: "province_treatment",
@@ -375,6 +403,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Treated worse", fr: "Traitée moins bien" }, { en: "Treated better", fr: "Traitée mieux" }],
     headline: { en: "{more} likely to say their province is favoured", fr: "{more} enclins à dire que leur province est avantagée" },
+    statement: { en: "Their province is favoured", fr: "Leur province est avantagée" },
   },
   {
     code: "mail_vote_trust",
@@ -385,6 +414,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Mail voting not trustworthy", fr: "Vote par la poste pas fiable" }, { en: "Mail voting trustworthy", fr: "Vote par la poste fiable" }],
     headline: { en: "{more} trusting of mail voting", fr: "Font {more} confiance au vote par la poste" },
+    statement: { en: "Mail voting can be trusted", fr: "Le vote par la poste est fiable" },
   },
   {
     code: "voting_age_16",
@@ -395,6 +425,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Keep the voting age at 18", fr: "Garder l'âge de vote à 18 ans" }, { en: "Lower the voting age to 16", fr: "Abaisser l'âge de vote à 16 ans" }],
     headline: { en: "{more} in favour of voting at 16", fr: "{more} favorables au vote à 16 ans" },
+    statement: { en: "Voting at 16", fr: "Le vote à 16 ans" },
   },
   {
     code: "mandate_legitimate",
@@ -407,6 +438,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "No legitimate mandate", fr: "Pas de mandat légitime" }, { en: "Legitimate mandate", fr: "Mandat légitime" }],
     headline: { en: "{more} likely to see the winner's mandate as legitimate", fr: "{more} enclins à juger légitime le mandat du gagnant" },
+    statement: { en: "The winner's mandate is legitimate", fr: "Le mandat du gagnant est légitime" },
   },
   {
     code: "french_threatened",
@@ -419,6 +451,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Not threatened", fr: "Pas menacée" }, { en: "Threatened", fr: "Menacée" }],
     headline: { en: "{more} likely to say French is threatened in Quebec", fr: "{more} enclins à dire que le français est menacé au Québec" },
+    statement: { en: "French is threatened in Quebec", fr: "Le français est menacé au Québec" },
   },
   {
     code: "french_culture_threatened",
@@ -431,6 +464,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Not threatened", fr: "Pas menacée" }, { en: "Threatened", fr: "Menacée" }],
     headline: { en: "{more} likely to say French culture is threatened in Quebec", fr: "{more} enclins à dire que la culture française est menacée au Québec" },
+    statement: { en: "French culture is threatened in Quebec", fr: "La culture française est menacée au Québec" },
   },
   {
     code: "immigration",
@@ -444,6 +478,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Fewer immigrants", fr: "Moins d'immigrants" }, { en: "More immigrants", fr: "Plus d'immigrants" }],
     headline: { en: "Want {more} immigration", fr: "Veulent {more} d'immigration" },
+    statement: { en: "More immigration", fr: "Plus d'immigration" },
   },
   {
     code: "bilingualism",
@@ -454,6 +489,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Bilingualism has not gone too far", fr: "Le bilinguisme n'est pas allé trop loin" }, { en: "Bilingualism has gone too far", fr: "Le bilinguisme est allé trop loin" }],
     headline: { en: "{more} likely to say bilingualism has gone too far", fr: "{more} enclins à dire que le bilinguisme est allé trop loin" },
+    statement: { en: "Bilingualism has gone too far", fr: "Le bilinguisme est allé trop loin" },
   },
   {
     code: "spend_immigrants",
@@ -463,6 +499,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Less immigrant spending", fr: "Moins de dépenses pour les immigrants" }, { en: "More immigrant spending", fr: "Plus de dépenses pour les immigrants" }],
     headline: { en: "Want {more} spending on immigrants", fr: "Veulent {more} de dépenses pour les immigrants" },
+    statement: { en: "More spending on immigrants", fr: "Plus de dépenses pour les immigrants" },
   },
   {
     code: "immigrants_jobs",
@@ -473,6 +510,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} likely to say immigrants take jobs", fr: "{more} enclins à dire que les immigrants enlèvent des emplois" },
+    statement: { en: "Immigrants take jobs", fr: "Les immigrants enlèvent des emplois" },
   },
   {
     code: "immigrants_crime",
@@ -483,6 +521,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} likely to say immigrants increase crime", fr: "{more} enclins à dire que les immigrants font augmenter la criminalité" },
+    statement: { en: "Immigrants increase crime", fr: "Les immigrants font augmenter la criminalité" },
   },
   {
     code: "immigrants_fit_in",
@@ -493,6 +532,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Disagree", fr: "En désaccord" }, { en: "Agree", fr: "D'accord" }],
     headline: { en: "{more} likely to doubt that immigrants want to fit in", fr: "{more} enclins à douter que les immigrants veuillent s'intégrer" },
+    statement: { en: "Recent immigrants don't want to fit in", fr: "Les immigrants récents ne veulent pas s'intégrer" },
   },
   {
     code: "quebec_sovereignty",
@@ -525,6 +565,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Would get worse", fr: "Se détériorerait" }, { en: "Would get better", fr: "S'améliorerait" }],
     headline: { en: "{more} likely to say separation would raise their standard of living", fr: "{more} enclins à dire que la séparation améliorerait leur niveau de vie" },
+    statement: { en: "Separation would raise their standard of living", fr: "La séparation améliorerait leur niveau de vie" },
   },
   {
     code: "separation_french",
@@ -538,6 +579,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "French would fare worse", fr: "Le français s'en porterait moins bien" }, { en: "French would fare better", fr: "Le français s'en porterait mieux" }],
     headline: { en: "{more} likely to say separation would help French", fr: "{more} enclins à dire que la séparation aiderait le français" },
+    statement: { en: "Separation would help French", fr: "La séparation aiderait le français" },
   },
   {
     code: "provincial_power",
@@ -550,6 +592,7 @@ export const QUESTIONS: Question[] = [
     isOrdinal: true,
     ends: [{ en: "Strong federal government", fr: "Gouvernement fédéral fort" }, { en: "More power to the provinces", fr: "Plus de pouvoir aux provinces" }],
     headline: { en: "{more} in favour of more power to the provinces", fr: "{more} favorables à plus de pouvoir aux provinces" },
+    statement: { en: "More power to the provinces", fr: "Plus de pouvoir aux provinces" },
   },
   {
     code: "vote_post",
