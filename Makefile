@@ -14,6 +14,7 @@ extract:
 build:
 	uv run python -m pipeline.load
 	uv run python -m pipeline.ipf
+	uv run python -m pipeline.dimensions
 
 mrp:
 	uv run python -m pipeline.mrp vote_post

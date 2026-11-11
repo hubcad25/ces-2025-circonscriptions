@@ -8,6 +8,7 @@ import RidingChart, {
 } from "./RidingChart";
 import RidingMinimap from "./RidingMinimap";
 import CensusHighlights from "./CensusHighlights";
+import RidingDimensions from "./RidingDimensions";
 import RidingProfile from "./RidingProfile";
 import { useLang } from "./i18n";
 import { provinceName } from "./provinces";
@@ -153,6 +154,7 @@ const SECTIONS: { id: string; label: [string, string] }[] = [
   { id: "standouts", label: ["What stands out", "Ce qui se démarque"] },
   { id: "answers", label: ["Answers by question", "Réponses par question"] },
   { id: "similar", label: ["Similar and different ridings", "Circonscriptions semblables et différentes"] },
+  { id: "dimensions", label: ["Dimensions", "Dimensions"] },
 ];
 
 function scrollToSection(id: string) {
@@ -238,6 +240,12 @@ export default function RidingPage({ fed23 }: { fed23: number }) {
         )}
       </p>
       <SimilarRidings similar={riding.similar} />
+      <RidingDimensions
+        fed23={fed23}
+        province={estimates[0].province}
+        ridingName={estimates[0].fed23_name}
+        provinceName={provinceName(estimates[0].province, lang)}
+      />
       <ModelCheck estimates={estimates} />
     </div>
   );

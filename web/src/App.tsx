@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AboutPage from "./AboutPage";
+import DimensionsPage from "./DimensionsPage";
 import ExplorePage from "./ExplorePage";
 import { type Lang, LangContext, initialLang, saveLang } from "./i18n";
 import RidingPage from "./RidingPage";
@@ -10,12 +11,14 @@ const SITE_TITLE = { en: "What Your Riding Thinks", fr: "Ce que pense votre circ
 const TABS = [
   { hash: "#/", label: { en: "Explore", fr: "Explorer" } },
   { hash: "#/validation", label: { en: "Validation", fr: "Validation" } },
+  { hash: "#/dimensions", label: { en: "Dimensions", fr: "Dimensions" } },
   { hash: "#/about", label: { en: "About", fr: "À propos" } },
 ];
 
 function Page({ hash }: { hash: string }) {
   const ridingMatch = hash.match(/^#\/riding\/(\d+)$/);
   if (ridingMatch) return <RidingPage fed23={Number(ridingMatch[1])} />;
+  if (hash === "#/dimensions") return <DimensionsPage />;
   if (hash === "#/validation") return <ValidationPage />;
   if (hash === "#/about") return <AboutPage />;
   return <ExplorePage />;
