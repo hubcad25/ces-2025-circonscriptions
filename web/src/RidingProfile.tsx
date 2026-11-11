@@ -137,8 +137,18 @@ function StandoutGroup({ title, items, onSelect }: GroupProps) {
   );
 }
 
+// The riding's marker in the legends: its estimate (dot) on its 90% interval (bar), as drawn.
+export function IntervalKey() {
+  return (
+    <svg className="key-interval" viewBox="0 0 28 10" aria-hidden="true">
+      <rect className="range" x={0} y={1} width={28} height={8} rx={4} />
+      <circle className="mean" cx={14} cy={5} r={4.5} />
+    </svg>
+  );
+}
+
 // A territory's estimate is its single riding's, so comparing the two says nothing.
-const TERRITORIES = ["YT", "NT", "NU"];
+export const TERRITORIES = ["YT", "NT", "NU"];
 
 type Props = { estimates: Estimate[]; onSelect: (question: Question) => void };
 
@@ -161,7 +171,7 @@ export default function RidingProfile({ estimates, onSelect }: Props) {
     <section id="standouts" className="profile">
       <h2>{t("What stands out", "Ce qui se démarque")}</h2>
       <p className="profile-legend">
-        <span className="key-mean" />
+        <IntervalKey />
         <span className="key-name" title={estimates[0].fed23_name}>
           {estimates[0].fed23_name}
         </span>

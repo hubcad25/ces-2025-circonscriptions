@@ -158,3 +158,34 @@ export async function loadDimension(dimension: number): Promise<DimensionData> {
   });
   return { loadings: file.loadings[dimension], ridings };
 }
+
+// One row per dimension for a riding page: the riding's score and interval, its province and
+// Canada, and the widest gap between Canada and any riding's interval, which sets the axis.
+export type RidingDimension = {
+  dimension: number;
+  mean: number;
+  low: number;
+  high: number;
+  provincial: number;
+  national: number;
+  spread: number;
+};
+
+export async function loadRidingDimensions(fed23: number, province: string): Promise<RidingDimension[]> {
+  const file = await fetchJson<DimensionFile>("dimensions.json");
+  return Object.entries(file.ridings).map(([dimension, ridings]) => {
+    const [, mean, low, high] = ridings.find(([code]) => code === fed23)!;
+    const references = file.references[dimension];
+    const national = references.canada;
+    const gaps = ridings.flatMap(([, , bottom, top]) => [national - bottom, top - national]);
+    return {
+      dimension: Number(dimension),
+      mean,
+      low,
+      high,
+      provincial: references[province],
+      national,
+      spread: Math.max(...gaps),
+    };
+  });
+}

@@ -1025,6 +1025,7 @@ p.legend-caption {
 
 /* Page sections of the riding page, set apart by a rule above their title. */
 .profile h2,
+.riding-dimensions h2,
 #answers,
 .similar h2 {
   margin: 40px 0 16px;
@@ -1042,7 +1043,6 @@ p.legend-caption {
   font-size: 13px;
 }
 
-.key-mean,
 .key-reference {
   display: inline-block;
   width: 9px;
@@ -1050,8 +1050,18 @@ p.legend-caption {
   border-radius: 50%;
 }
 
-.key-mean {
-  background: var(--muted);
+.key-interval {
+  width: 28px;
+  height: 10px;
+}
+
+.key-interval .range {
+  fill: var(--muted);
+  opacity: 0.4;
+}
+
+.key-interval .mean {
+  fill: var(--muted);
 }
 
 .key-reference {
@@ -1388,4 +1398,54 @@ main:has(.dimensions) {
 
 .dimension-map {
   min-height: 0;
+}
+
+/* One row per dimension: its name above, then the axis between its two ends. */
+.riding-dimensions ul {
+  max-width: 960px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.riding-dimensions li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 2fr) minmax(0, 1fr);
+  gap: 2px 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dimension-name {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.dimension-end {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.dimension-end.left {
+  text-align: right;
+}
+
+.dimension-bar {
+  margin-top: 0;
+}
+
+.dimension-bar .canada {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.key-canada {
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  margin-left: 12px;
+  background: var(--text);
 }
