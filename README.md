@@ -40,6 +40,7 @@ To check a code change without waiting for a full fit, `uv run python -m pipelin
 | Statistics Canada | Representative points of 2021 dissemination blocks | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/13 |
 | Statistics Canada | 2021 census subdivision boundaries, for the city names on the map | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/9 |
 | Statistics Canada | 2021 census population of census subdivisions | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest/data/STC_CP,DF_CSD/A5..1.1.1 |
+| Statistics Canada | 2021 economic region boundaries, merged into the regions of the model | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/2 |
 | Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
 | Statistics Canada | Table 98-10-0209: mother tongue by age and gender, 2013 ridings | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810020901 |
 | Statistics Canada | Table 98-10-0386: highest certificate by age and gender, provinces | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810038601 |
@@ -69,12 +70,14 @@ Current tables:
 - `staging.ridings_2013`, `staging.ridings_2023`: riding boundaries, in EPSG:3347
 - `staging.blocks`, `staging.da_population`: dissemination blocks (representative point) and dissemination area populations
 - `staging.subdivisions`: census subdivisions (municipalities) with their population and English and French names; the 200 largest name places on the map, each at its population-weighted centre
+- `staging.economic_regions`: the 76 economic regions, each assigned to one of 50 regions of the model (merged within a province so that a region holds about three ridings or more)
 - `staging.riding_population`: official population by riding, 2013 and 2023 boundaries
 - `staging.census_age_gender_language`, `staging.census_education_gender`, `staging.census_province_education`: census counts used to build poststratification cells
 - `analytics.fed_crosswalk`: share of each 2013 riding's population in each 2023 riding, from a spatial join of blocks; a dissemination area's population is split evenly across its blocks (median gap with official riding populations 0.16%, max 4.2%)
 - `analytics.census_cells`: adults by 2013 riding × age (8) × gender (2) × education (4) × mother tongue (3) × 2021 vote (6, non-voters included), built by iterative proportional fitting: a provincial age × gender × education structure, times the survey's 2021 vote by province and age, is raked to each riding's age × gender × language, education × gender and 2021 vote counts, since the census does not publish education by age for ridings
 - `analytics.results_fed`: one row per riding × party (votes, share, rank, winner, lead over the next party); 343 ridings, matches the official seat count (169 LPC, 144 CPC, 22 BQ, 7 NDP, 1 GPC)
 - `analytics.past_vote_fed`: share of 2021 electors by vote per 2013 riding, non-voters as `NONE`
+- `analytics.fed_regions`: region of each 2013 riding, the one holding most of its population; the City of Toronto (census division 3520) is split from the rest of the Toronto economic region, for 51 regions
 - `analytics.fed_predictors`: standardized riding predictors for the MRP model (French and other mother tongue, bachelor's degree, log density)
 - `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts: `vote_post`, `vote_pre` (LPC, CPC, NDP, BQ, OTH), and 42 ordinal attitude questions on government spending and responsibilities, the economy, Canada–US relations, Indigenous peoples, social values, democracy, immigration and language, Quebec and the federation (CES variable names in `sql/analytics/mrp_outcomes.sql`); "don't know" is dropped
 - `analytics.province_questions`: questions asked in one province only (Quebec sovereignty); they are fitted and poststratified in that province and have no national summary
