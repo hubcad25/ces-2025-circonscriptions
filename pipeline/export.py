@@ -104,7 +104,8 @@ def export_questions(estimates: list[dict], destination: Path) -> None:
 
 
 # One file per riding for its page: [mean, low, high] by question and category, followed by the
-# official result for the vote, and the similar and different ridings by topic.
+# official result for the vote, the similar and different ridings by topic, and the census traits
+# that stand out: [trait, share, reference share] by reference (province or canada).
 def export_ridings(
     con: duckdb.DuckDBPyConnection, estimates: list[dict], destination: Path
 ) -> None:
@@ -113,7 +114,7 @@ def export_ridings(
         values = [row["estimate_mean"], row["estimate_low"], row["estimate_high"]]
         if row["actual_share"] is not None:
             values.append(row["actual_share"])
-        riding = ridings.setdefault(row["fed23"], {"estimates": {}, "similar": {}})
+        riding = ridings.setdefault(row["fed23"], {"estimates": {}, "similar": {}, "census": {}})
         categories = riding["estimates"].setdefault(row["question"], {})
         categories[row["category"]] = values
     for row in query(con, "similar"):
@@ -121,6 +122,9 @@ def export_ridings(
             "similar": row["similar"],
             "different": row["different"],
         }
+    for row in query(con, "census_highlights"):
+        traits = ridings[row["fed23"]]["census"].setdefault(row["reference"], [])
+        traits.append([row["trait"], row["share"], row["reference_share"]])
     folder = destination / "ridings"
     shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir()
