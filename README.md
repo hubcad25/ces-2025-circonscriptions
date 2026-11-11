@@ -41,7 +41,7 @@ To check a code change without waiting for a full fit, `uv run python -m pipelin
 | Statistics Canada | 2021 census subdivision boundaries, for the city names on the map | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/9 |
 | Statistics Canada | 2021 census population of census subdivisions | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest/data/STC_CP,DF_CSD/A5..1.1.1 |
 | Statistics Canada | 2021 economic region boundaries, merged into the regions of the model | https://geo.statcan.gc.ca/geo_wa/rest/services/2021/Cartographic_boundary_files/MapServer/2 |
-| Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
+| Statistics Canada | 2021 Census profile: population by dissemination area and by riding, education by gender by riding, and the population traits shown on the riding pages (2023 ridings) | https://api.statcan.gc.ca/census-recensement/profile/sdmx/rest |
 | Statistics Canada | Table 98-10-0209: mother tongue by age and gender, 2013 ridings | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810020901 |
 | Statistics Canada | Table 98-10-0386: highest certificate by age and gender, provinces | https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810038601 |
 | OpenFreeMap | Place names on the minimap of the riding page (OpenMapTiles, OpenStreetMap data), loaded by the browser | https://openfreemap.org |
@@ -55,7 +55,7 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 - `sql/staging`: cleaned data, one table per source
 - `sql/analytics`: analysis tables
 - `sql/estimates`: poststratification and validation, run after the MRP model
-- `sql/export`: the JSON files of the website (one per question, one per riding, validation) and the city names of the map, written by `make export`
+- `sql/export`: the JSON files of the website (one per question, one per riding, validation, survey means, census highlights) and the city names of the map, written by `make export`
 - `tests/`: data quality checks
 - `web/`: the website (React + Vite), deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
 
@@ -72,6 +72,7 @@ Current tables:
 - `staging.subdivisions`: census subdivisions (municipalities) with their population and English and French names; the 200 largest name places on the map, each at its population-weighted centre
 - `staging.economic_regions`: the 76 economic regions, each assigned to one of 50 regions of the model (merged within a province so that a region holds about three ridings or more)
 - `staging.riding_population`: official population by riding, 2013 and 2023 boundaries
+- `staging.riding_traits`: census traits of each 2023 riding (age, education, mother tongue, immigrants, visible minorities, Indigenous identity, low income, home ownership) as a count and its total; `sql/export/census_highlights.sql` picks the ones that stand out against the province and Canada
 - `staging.census_age_gender_language`, `staging.census_education_gender`, `staging.census_province_education`: census counts used to build poststratification cells
 - `analytics.fed_crosswalk`: share of each 2013 riding's population in each 2023 riding, from a spatial join of blocks; a dissemination area's population is split evenly across its blocks (median gap with official riding populations 0.16%, max 4.2%)
 - `analytics.census_cells`: adults by 2013 riding × age (8) × gender (2) × education (4) × mother tongue (3) × 2021 vote (6, non-voters included), built by iterative proportional fitting: a provincial age × gender × education structure, times the survey's 2021 vote by province and age, is raked to each riding's age × gender × language, education × gender and 2021 vote counts, since the census does not publish education by age for ridings
