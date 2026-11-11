@@ -7,6 +7,7 @@ extract:
 	uv run python -m pipeline.extract.boundaries
 	uv run python -m pipeline.extract.dissemination_areas
 	uv run python -m pipeline.extract.subdivisions
+	uv run python -m pipeline.extract.regions
 	uv run python -m pipeline.extract.census
 	uv run python -m pipeline.extract.ces
 
