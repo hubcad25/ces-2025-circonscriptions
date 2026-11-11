@@ -22,7 +22,10 @@ N_CHAINS = 4
 N_WARMUP = 1000
 # With the region level, these chains did not converge with a 1000-iteration warmup.
 LONG_WARMUP = 2000
-LONG_WARMUP_QUESTIONS = {"equal_rights", "people_trusted", "reduce_inequality"}
+LONG_WARMUP_QUESTIONS = {"equal_rights", "reduce_inequality"}
+# people_trusted has two answers, hence a single cutpoint; with the region level its chains do
+# not converge even with a longer warmup, so it is fitted without regions.
+NO_REGION_QUESTIONS = {"people_trusted"}
 N_SAMPLES = 500
 QUICK_ITERATIONS = 20
 N_DRAWS = 100
@@ -382,6 +385,8 @@ def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
     categories = category_order(survey["category"], scale)
     regions = load_regions(database, ridings)
     sizes = effect_sizes(ridings, regions)
+    if question in NO_REGION_QUESTIONS:
+        sizes.pop("region")
     predictors = load_predictors(database, ridings)
     allowed = allowed_categories(database, question, ridings, categories)
     if is_ordinal and not allowed.all():
