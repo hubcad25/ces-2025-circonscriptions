@@ -25,6 +25,8 @@ export type SurveyMean = {
   model_mean: number;
   raw_mean: number;
   weighted_mean: number;
+  // The official 2025 national result, for the vote only.
+  official_share: number | null;
 };
 // [fed23, mean, low, high, result] by question and party.
 type ValidationFile = Record<string, Record<string, [number, number, number, number, number][]>>;

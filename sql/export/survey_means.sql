@@ -1,7 +1,8 @@
 -- The model's national estimate of every question next to the survey's own means: raw (one
 -- respondent, one vote) and with the CES weights. Ordinal questions are compared on their mean
 -- position on the scale (category 'mean'), the vote on each party's share. A question asked in
--- one province only is compared within that province.
+-- one province only is compared within that province. The vote also gets the official national
+-- result.
 WITH waves AS (
     -- Post-election respondents are a subset of the campaign wave: a question that only they
     -- answered comes from the post-election wave, and takes its weights.
@@ -74,6 +75,15 @@ model AS (
         USING (question, province_code)
 ),
 
+official AS (
+    -- The Greens, the People's Party and the others are grouped, as in the model's categories.
+    SELECT
+        CASE WHEN party IN ('LPC', 'CPC', 'NDP', 'BQ') THEN party ELSE 'OTH' END AS category,
+        sum(votes) / sum(sum(votes)) OVER () AS official_share
+    FROM analytics.results_fed
+    GROUP BY 1
+),
+
 survey AS (
     FROM ordinal_means
     UNION ALL
@@ -85,10 +95,13 @@ SELECT
     category,
     ROUND(m.model_mean, 4) AS model_mean,
     ROUND(s.raw_mean, 4) AS raw_mean,
-    ROUND(s.weighted_mean, 4) AS weighted_mean
+    ROUND(s.weighted_mean, 4) AS weighted_mean,
+    ROUND(o.official_share, 4) AS official_share
 FROM survey AS s
 INNER JOIN model AS m
     USING (question, category)
+LEFT JOIN official AS o
+    ON s.question IN ('vote_post', 'vote_pre') AND s.category = o.category
 SEMI JOIN site_questions
     USING (question)
 ORDER BY question, category

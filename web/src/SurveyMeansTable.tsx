@@ -50,6 +50,7 @@ export default function SurveyMeansTable() {
               <th className="number">{t("Raw", "Brute")}</th>
               <th className="number">{t("Weighted", "Pondérée")}</th>
               <th className="number">{t("Gap", "Écart")}</th>
+              <th className="number">{t("Official result", "Résultat officiel")}</th>
             </tr>
           </thead>
           <tbody>
@@ -60,6 +61,9 @@ export default function SurveyMeansTable() {
                 <td className="number">{format(row, row.raw_mean)}</td>
                 <td className="number">{format(row, row.weighted_mean)}</td>
                 <td className="number">{formatGap(row)}</td>
+                <td className="number">
+                  {row.official_share == null ? "" : format(row, row.official_share)}
+                </td>
               </tr>
             ))}
           </tbody>
