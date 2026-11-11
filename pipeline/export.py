@@ -158,6 +158,7 @@ def export(database: Path, destination: Path) -> None:
         export_questions(estimates, destination)
         export_ridings(con, estimates, destination)
         export_validation(estimates, destination)
+        write_json(destination / "survey_means.json", query(con, "survey_means"))
         con.execute("LOAD spatial")
         cities_query = (QUERIES / "cities.sql").read_text()
         for name, query_text in [("ridings", RIDINGS_QUERY), ("cities", cities_query)]:
