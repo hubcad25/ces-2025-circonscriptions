@@ -39,3 +39,14 @@ def test_score_weights_give_uncorrelated_scores_with_unit_variance():
     loadings = varimax(principal_components(correlations, 2))
     weights = score_weights(loadings)
     np.testing.assert_allclose(weights.T @ correlations @ weights, np.eye(2), atol=1e-10)
+
+
+def test_every_riding_has_a_score_on_every_dimension(con):
+    missing = con.execute("""
+        SELECT count(*)
+        FROM staging.ridings_2023
+        CROSS JOIN (SELECT DISTINCT dimension FROM analytics.dimension_loadings)
+        ANTI JOIN analytics.fed_dimensions
+            USING (fed23, dimension)
+    """).fetchone()[0]
+    assert missing == 0
