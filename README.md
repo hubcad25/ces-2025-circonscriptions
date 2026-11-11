@@ -89,10 +89,10 @@ Current tables:
 - `analytics.fed_summaries`: mean and widened 90% interval per question × 2023 riding × category, as read by the website; ordinal questions also get grouped answers and their mean position on the scale (`mean`)
 - `analytics.national_summaries`: national share per question × category, from every census cell weighted by its adult population
 - `analytics.province_summaries`: the same per province, which the map compares ridings with when a province is chosen
-- `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.92 points for `vote_post`, 5.14 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
+- `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.88 points for `vote_post`, 5.08 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
 
 ## Known limitations
 
 - The CES under-represents people whose mother tongue is neither English nor French (6.7% of respondents vs 23.4% of adults in the census); poststratification restores their weight, but those cells rely on few respondents.
 - Within a riding, the link between education and language is not constrained by any census table.
-- Model intervals only reflect sampling uncertainty: on the 2025 vote, 90% intervals cover 72% of official results. Every interval is widened by a factor k (1.45, `analytics.interval_scale`) calibrated on the vote, assuming attitudes carry similar non-sampling error.
+- Model intervals only reflect sampling uncertainty: on the 2025 vote, 90% intervals cover 69% of official results. Every interval is widened by a factor k (1.52, `analytics.interval_scale`) calibrated on the vote, assuming attitudes carry similar non-sampling error.
