@@ -12,6 +12,13 @@ POPULATION_KEY = "A5..1.8.1"
 # Highest certificate for men+ and women+ aged 15+: total, none, secondary, postsecondary
 # below bachelor, bachelor or higher.
 EDUCATION_KEY = "A5..2+3.1998+1999+2000+2002+2008.1"
+# Traits shown on the riding page, each as a count and the total it is a share of: age (8, 9,
+# 24), low income (321, 326), mother tongue (379, 382-384), Indigenous identity (1388, 1389),
+# owner households (1400, 1401), immigrants (1513, 1515), visible minorities (1669, 1670) and
+# bachelor's degree or higher at 25 to 64 (2014, 2024).
+TRAITS_KEY = (
+    "A5..1.8+9+24+321+326+379+382+383+384+1388+1389+1400+1401+1513+1515+1669+1670+2014+2024.1"
+)
 
 TABLE_URL = "https://www150.statcan.gc.ca/n1/tbl/csv/{table}-eng.zip"
 TABLES = {
@@ -37,6 +44,7 @@ if __name__ == "__main__":
     for order, version in VERSIONS.items():
         download_profile(version, POPULATION_KEY, OUTPUT_DIR / f"riding_population_{order}.csv")
     download_profile(VERSIONS["2013"], EDUCATION_KEY, OUTPUT_DIR / "education_gender_2013.csv")
+    download_profile(VERSIONS["2023"], TRAITS_KEY, OUTPUT_DIR / "riding_traits_2023.csv")
     for table, sha256 in TABLES.items():
         archive = OUTPUT_DIR / f"{table}.zip"
         download(TABLE_URL.format(table=table), archive, sha256)
