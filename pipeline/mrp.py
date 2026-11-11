@@ -20,6 +20,9 @@ N_CHAINS = 4
 # converge with a 500-iteration warmup. A quick run only checks that the code runs end to end
 # (about 20 s instead of 8 min); its draws are not saved.
 N_WARMUP = 1000
+# With the region level, these chains did not converge with a 1000-iteration warmup.
+LONG_WARMUP = 2000
+LONG_WARMUP_QUESTIONS = {"equal_rights", "people_trusted", "reduce_inequality"}
 N_SAMPLES = 500
 QUICK_ITERATIONS = 20
 N_DRAWS = 100
@@ -84,6 +87,19 @@ def load_predictors(database: Path, ridings: list[int]) -> np.ndarray:
     return predictors.loc[ridings].to_numpy()
 
 
+def load_regions(database: Path, ridings: list[int]) -> list[str]:
+    with duckdb.connect(database, read_only=True) as con:
+        regions = con.sql("FROM analytics.fed_regions").df().set_index("fed13")
+    if not set(ridings) <= set(regions.index):
+        raise ValueError("Some ridings have no region in analytics.fed_regions")
+    # One region per riding, in the order of the riding codes used by encode().
+    return regions.loc[ridings, "region"].tolist()
+
+
+def riding_regions(regions: list[str]) -> np.ndarray:
+    return pd.Categorical(regions, categories=sorted(set(regions))).codes
+
+
 def group_levels(ridings: list[int]) -> dict[str, list]:
     # Levels come from the census so that the same codes index the poststratification cells,
     # including ridings with no respondent.
@@ -97,7 +113,7 @@ def group_levels(ridings: list[int]) -> dict[str, list]:
     }
 
 
-def encode(frame: pd.DataFrame, ridings: list[int]) -> dict[str, np.ndarray]:
+def encode(frame: pd.DataFrame, ridings: list[int], regions: list[str]) -> dict[str, np.ndarray]:
     codes = {
         column: pd.Categorical(frame[column], categories=values).codes
         for column, values in group_levels(ridings).items()
@@ -105,15 +121,20 @@ def encode(frame: pd.DataFrame, ridings: list[int]) -> dict[str, np.ndarray]:
     if any((values < 0).any() for values in codes.values()):
         raise ValueError("Some respondents have a level that is not in the census cells")
     codes["province"] = riding_provinces(ridings)[codes["fed13"]]
+    codes["region"] = riding_regions(regions)[codes["fed13"]]
     return codes
 
 
-def effect_sizes(ridings: list[int]) -> dict[str, int]:
+def effect_sizes(ridings: list[int], regions: list[str]) -> dict[str, int]:
     sizes = {group: len(values) for group, values in group_levels(ridings).items()}
     # A question asked in one province has a single province effect, which would only duplicate
     # the intercept (or the cutpoints) and slow the chains down.
     if len(provinces(ridings)) > 1:
         sizes["province"] = len(provinces(ridings))
+    # Regions sit between provinces and ridings: ridings with few respondents are pulled toward
+    # their region, which is pulled toward its province.
+    if len(set(regions)) > 1:
+        sizes["region"] = len(set(regions))
     return sizes
 
 
@@ -359,16 +380,19 @@ def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
     scale = load_scale(database, question)
     is_ordinal = scale is not None
     categories = category_order(survey["category"], scale)
-    sizes = effect_sizes(ridings)
+    regions = load_regions(database, ridings)
+    sizes = effect_sizes(ridings, regions)
     predictors = load_predictors(database, ridings)
     allowed = allowed_categories(database, question, ridings, categories)
     if is_ordinal and not allowed.all():
         raise ValueError("Exclusions are only supported for multinomial questions")
     outcome = pd.Categorical(survey["category"], categories=categories).codes
-    survey_codes = encode(survey, ridings)
+    survey_codes = encode(survey, ridings, regions)
     if not allowed[survey_codes["province"], outcome].all():
         raise ValueError("Some respondents chose a category excluded from their province")
-    n_warmup = QUICK_ITERATIONS if is_quick else N_WARMUP
+    n_warmup = LONG_WARMUP if question in LONG_WARMUP_QUESTIONS else N_WARMUP
+    if is_quick:
+        n_warmup = QUICK_ITERATIONS
     n_samples = QUICK_ITERATIONS if is_quick else N_SAMPLES
     mcmc = fit(
         survey_codes,
@@ -388,7 +412,7 @@ def fit_question(database: Path, question: str, is_quick: bool = False) -> None:
         sizes,
         predictors,
         allowed,
-        encode(cells, ridings),
+        encode(cells, ridings, regions),
         past_vote_weights(cells),
         is_ordinal,
     )
