@@ -98,7 +98,7 @@ function StandoutGroup({ title, items, onSelect }: GroupProps) {
   return (
     <div>
       <h3>
-        <span className="muted">{t("Compared with", "Référence :")}</span> {title}
+        <span className="muted">{t("Opinions compared with", "Opinions, référence :")}</span> {title}
       </h3>
       {items.length === 0 ? (
         <p className="subtitle">{t("No clear difference.", "Aucun écart net.")}</p>

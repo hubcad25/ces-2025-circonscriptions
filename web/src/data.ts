@@ -16,8 +16,11 @@ type QuestionFile = Record<string, [number, number, number, number][]>;
 type RidingFile = {
   estimates: Record<string, Record<string, number[]>>;
   similar: Record<string, Neighbours>;
+  census: Census;
 };
 export type Neighbours = { similar: number[]; different: number[] };
+// Census traits that stand out: [trait, share, reference share], against the province and Canada.
+export type Census = { province?: [string, number, number][]; canada?: [string, number, number][] };
 // The model's national estimate next to the survey's raw and weighted means (survey_means.sql).
 export type SurveyMean = {
   question: string;
@@ -74,7 +77,11 @@ export async function loadQuestion(question: string, category: string): Promise<
   });
 }
 
-export type RidingData = { estimates: RidingEstimate[]; similar: Record<string, Neighbours> };
+export type RidingData = {
+  estimates: RidingEstimate[];
+  similar: Record<string, Neighbours>;
+  census: Census;
+};
 
 // Every question for one riding, or null for an unknown riding code.
 export async function loadRiding(fed23: number): Promise<RidingData | null> {
@@ -99,7 +106,7 @@ export async function loadRiding(fed23: number): Promise<RidingData | null> {
       provincial_share: summaries[question][category][riding.province] ?? null,
     })),
   );
-  return { estimates, similar: file.similar };
+  return { estimates, similar: file.similar, census: file.census };
 }
 
 // One row per riding where the party ran, for the Validation page.

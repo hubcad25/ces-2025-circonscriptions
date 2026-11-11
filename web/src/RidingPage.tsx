@@ -7,6 +7,7 @@ import RidingChart, {
   RidingChartLabels,
 } from "./RidingChart";
 import RidingMinimap from "./RidingMinimap";
+import CensusHighlights from "./CensusHighlights";
 import RidingProfile from "./RidingProfile";
 import { useLang } from "./i18n";
 import { provinceName } from "./provinces";
@@ -192,10 +193,11 @@ export default function RidingPage({ fed23 }: { fed23: number }) {
       </div>
       <header className="riding-header">
         <RidingMinimap fed23={fed23} />
-        <div>
+        <div className="riding-title">
           <h1>{estimates[0].fed23_name}</h1>
           <p className="subtitle">{provinceName(estimates[0].province, lang)}</p>
         </div>
+        <CensusHighlights census={riding.census} provinceName={provinceName(estimates[0].province, lang)} />
       </header>
       <nav className="section-nav">
         {SECTIONS.map((section) => (

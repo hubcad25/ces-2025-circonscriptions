@@ -932,6 +932,8 @@ main:has(.explore, .riding-page) {
   list-style: none;
 }
 
+
+
 .standout {
   display: flex;
   flex-direction: column;
@@ -1076,6 +1078,32 @@ p.legend-caption {
   align-items: center;
   gap: 24px;
   margin-top: 8px;
+}
+
+/* Map, name and population side by side; the name wraps before the population moves below. */
+.riding-title {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.census {
+  flex: 1 1 360px;
+}
+
+.census h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.census-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.census-list li {
+  margin-bottom: 4px;
 }
 
 .riding-header h1 {
