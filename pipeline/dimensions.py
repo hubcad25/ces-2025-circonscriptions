@@ -8,6 +8,9 @@ from pipeline.load import DATABASE
 
 # After the fifth eigenvalue (1.7), the next ones flatten out (1.2, 1.2, 1.1, ...).
 N_DIMENSIONS = 5
+# The first component, before rotation, loads on most attitudes: the left-right axis. Its sign is
+# arbitrary; it is set so that attachment to traditional family values goes to the right.
+RIGHT_QUESTION = "family_values"
 MAX_ITERATIONS = 100
 TOLERANCE = 1e-12
 
@@ -45,13 +48,12 @@ def varimax(loadings: np.ndarray) -> np.ndarray:
     return loadings @ rotation
 
 
-def orient(loadings: np.ndarray) -> np.ndarray:
+def orient(loadings: np.ndarray, axis: np.ndarray) -> np.ndarray:
     # The rotation leaves the order and the sign of the dimensions arbitrary: sort them by the
-    # variance they explain and make the strongest loading of each one positive.
+    # variance they explain and turn each one so that a higher score leans to the right of the axis.
     order = np.argsort((loadings**2).sum(axis=0))[::-1]
     loadings = loadings[:, order]
-    strongest = loadings[np.abs(loadings).argmax(axis=0), np.arange(loadings.shape[1])]
-    return loadings * np.sign(strongest)
+    return loadings * np.sign(axis @ loadings)
 
 
 def score_weights(loadings: np.ndarray) -> np.ndarray:
@@ -61,7 +63,7 @@ def score_weights(loadings: np.ndarray) -> np.ndarray:
 
 
 def to_long(matrix: np.ndarray, questions: pd.Index, name: str) -> pd.DataFrame:
-    frame = pd.DataFrame(matrix, index=questions, columns=range(1, matrix.shape[1] + 1))
+    frame = pd.DataFrame(matrix, index=questions, columns=range(matrix.shape[1]))
     long = frame.melt(ignore_index=False, var_name="dimension", value_name=name)
     return long.reset_index(names="question")
 
@@ -72,12 +74,26 @@ def build_dimension_loadings(database: Path) -> None:
         # Pairwise correlations: questions from the two waves were not all asked to the same
         # respondents, so dropping incomplete rows would lose most of the sample.
         correlations = scores.corr()
-        loadings = orient(varimax(principal_components(correlations.to_numpy(), N_DIMENSIONS)))
+        questions = correlations.index
+        axis = principal_components(correlations.to_numpy(), 1)
+        axis *= np.sign(axis[questions.get_loc(RIGHT_QUESTION)])
+        rotated = orient(
+            varimax(principal_components(correlations.to_numpy(), N_DIMENSIONS)), axis[:, 0]
+        )
 
-        long = to_long(loadings, correlations.index, "loading")
-        long["weight"] = to_long(score_weights(loadings), correlations.index, "weight")["weight"]
+        # Dimension 0 is the left-right axis, then the rotated dimensions from 1. Their weights
+        # are computed apart: the axis overlaps with all of them.
+        loadings = np.hstack([axis, rotated])
+        weights = np.hstack([score_weights(axis), score_weights(rotated)])
+        long = to_long(loadings, questions, "loading")
+        long["weight"] = to_long(weights, questions, "weight")["weight"]
         con.register("loadings", long)
         con.execute("CREATE OR REPLACE TABLE analytics.dimension_loadings AS FROM loadings")
+
+        # Estimates are standardized like the answers before being projected.
+        scales = pd.DataFrame({"respondent_mean": scores.mean(), "respondent_sd": scores.std()})
+        con.register("scales", scales.reset_index(names="question"))
+        con.execute("CREATE OR REPLACE TABLE analytics.respondent_scales AS FROM scales")
 
 
 if __name__ == "__main__":

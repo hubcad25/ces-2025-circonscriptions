@@ -151,6 +151,21 @@ def export_validation(estimates: list[dict], destination: Path) -> None:
     write_json(destination / "validation.json", validation)
 
 
+# The attitude dimensions: [question, loading] and [fed23, mean, low, high] by dimension, and
+# the score of Canada and of each province by dimension and area.
+def export_dimensions(con: duckdb.DuckDBPyConnection, destination: Path) -> None:
+    dimensions = {"loadings": {}, "ridings": {}, "references": {}}
+    for row in query(con, "dimension_loadings"):
+        loadings = dimensions["loadings"].setdefault(row["dimension"], [])
+        loadings.append([row["question"], row["loading"]])
+    for row in query(con, "dimension_scores"):
+        ridings = dimensions["ridings"].setdefault(row["dimension"], [])
+        ridings.append([row["fed23"], row["score_mean"], row["score_low"], row["score_high"]])
+    for row in query(con, "dimension_references"):
+        dimensions["references"].setdefault(row["dimension"], {})[row["area"]] = row["score"]
+    write_json(destination / "dimensions.json", dimensions)
+
+
 def export(database: Path, destination: Path) -> None:
     destination.mkdir(parents=True, exist_ok=True)
     with duckdb.connect(database, read_only=True) as con:
@@ -163,6 +178,7 @@ def export(database: Path, destination: Path) -> None:
         export_ridings(con, estimates, destination)
         export_validation(estimates, destination)
         write_json(destination / "survey_means.json", query(con, "survey_means"))
+        export_dimensions(con, destination)
         con.execute("LOAD spatial")
         cities_query = (QUERIES / "cities.sql").read_text()
         for name, query_text in [("ridings", RIDINGS_QUERY), ("cities", cities_query)]:

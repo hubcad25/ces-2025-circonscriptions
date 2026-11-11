@@ -13,7 +13,7 @@ def rotate(loadings: np.ndarray, angle: float) -> np.ndarray:
 
 def test_varimax_recovers_a_simple_structure():
     mixed = rotate(SIMPLE_STRUCTURE, np.pi / 6)
-    np.testing.assert_allclose(orient(varimax(mixed)), SIMPLE_STRUCTURE, atol=1e-6)
+    np.testing.assert_allclose(orient(varimax(mixed), np.ones(5)), SIMPLE_STRUCTURE, atol=1e-6)
 
 
 def test_varimax_keeps_the_variance_of_each_question():
@@ -21,9 +21,10 @@ def test_varimax_keeps_the_variance_of_each_question():
     np.testing.assert_allclose((varimax(mixed) ** 2).sum(axis=1), (mixed**2).sum(axis=1))
 
 
-def test_orient_sorts_by_variance_and_makes_the_strongest_loading_positive():
-    loadings = np.array([[0.1, -0.9], [0.2, -0.8]])
-    np.testing.assert_allclose(orient(loadings), [[0.9, 0.1], [0.8, 0.2]])
+def test_orient_sorts_by_variance_and_leans_each_dimension_with_the_axis():
+    loadings = np.array([[0.1, -0.9], [-0.2, -0.8]])
+    axis = np.array([1.0, -1.0])
+    np.testing.assert_allclose(orient(loadings, axis), [[0.9, 0.1], [0.8, -0.2]])
 
 
 def test_principal_components_reproduce_a_one_factor_correlation():

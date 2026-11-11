@@ -5,16 +5,7 @@ CREATE SCHEMA IF NOT EXISTS analytics;
 -- then weighted by the score weights. A score is in standard deviations of individual
 -- respondents, so riding scores stay much closer to 0 than individual ones.
 CREATE OR REPLACE TABLE analytics.fed_dimension_draws AS
-WITH respondent_scales AS (
-    SELECT
-        question,
-        avg(score) AS respondent_mean,
-        stddev_samp(score) AS respondent_sd
-    FROM analytics.respondent_scores
-    GROUP BY question
-),
-
-mean_estimates AS (
+WITH mean_estimates AS (
     SELECT
         e.question,
         e.draw,
@@ -33,7 +24,7 @@ standardized_estimates AS (
         m.fed23,
         (m.estimate - r.respondent_mean) / r.respondent_sd AS z_score
     FROM mean_estimates AS m
-    INNER JOIN respondent_scales AS r
+    INNER JOIN analytics.respondent_scales AS r
         USING (question)
 )
 

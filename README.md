@@ -13,7 +13,7 @@ Requires [uv](https://docs.astral.sh/uv/) (installs Python 3.12) and, for `make 
 ```bash
 make install   # dependencies
 make extract   # downloads raw data into data/raw/ (143 MB), checks SHA-256 (~9 min)
-make build     # runs sql/raw, sql/staging, sql/analytics and the census raking (~1 min)
+make build     # runs sql/raw, sql/staging, sql/analytics, the census raking and the dimensional analysis (~1 min)
 make mrp       # fits the MRP model for the vote and attitude questions (~75 min)
 make export    # writes the website data to web/public/data/ (JSON, GeoJSON, PMTiles)
 make tables    # lists tables and row counts
@@ -50,12 +50,12 @@ Raw data is not versioned (`data/` is ignored by Git); the scripts download it a
 
 ## Structure
 
-- `pipeline/`: Python scripts (source extraction, running the SQL layers, census raking, MRP model)
+- `pipeline/`: Python scripts (source extraction, running the SQL layers, census raking, MRP model, dimensional analysis)
 - `sql/raw`: sources as received
 - `sql/staging`: cleaned data, one table per source
 - `sql/analytics`: analysis tables
 - `sql/estimates`: poststratification and validation, run after the MRP model
-- `sql/export`: the JSON files of the website (one per question, one per riding, validation, survey means, census highlights) and the city names of the map, written by `make export`
+- `sql/export`: the JSON files of the website (one per question, one per riding, validation, survey means, census highlights, dimensions) and the city names of the map, written by `make export`
 - `tests/`: data quality checks
 - `web/`: the website (React + Vite), deployed to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`
 
@@ -83,6 +83,8 @@ Current tables:
 - `analytics.mrp_outcomes`: one row per respondent × question, recoded into the categories the model predicts: `vote_post`, `vote_pre` (LPC, CPC, NDP, BQ, OTH), and 42 ordinal attitude questions on government spending and responsibilities, the economy, Canada–US relations, Indigenous peoples, social values, democracy, immigration and language, Quebec and the federation (CES variable names in `sql/analytics/mrp_outcomes.sql`); "don't know" is dropped
 - `analytics.province_questions`: questions asked in one province only (Quebec sovereignty); they are fitted and poststratified in that province and have no national summary
 - `analytics.mrp_scales`: ordered categories of the ordinal questions, fitted with an ordered logit; the vote is fitted with a multinomial logit
+- `analytics.respondent_scores`: one row per respondent × ordinal attitude, the rank of the answer on its scale (Quebec sovereignty left out, asked in one province only)
+- `analytics.dimension_loadings`, `analytics.respondent_scales`: principal component analysis of the 41 attitudes on pairwise correlations between respondents; dimension 0 is the first component (the left-right axis), dimensions 1 to 5 are the first five components after a varimax rotation (immigration, role of government, social conservatism, trust in democracy, French in Quebec), each turned so that a higher score leans to the right; with their score weights, and each question's mean and standard deviation among respondents
 - `analytics.mrp_draws`: 100 posterior draws of each category's probability per census cell (2021 vote averaged out), 32M rows per question
 - `analytics.mrp_exclusions`: categories that cannot occur in a province (a party with no candidate there, i.e. the Bloc outside Quebec); the model gives them a probability of zero
 - `analytics.fed_exclusions`: parties with no candidate in a 2023 riding (3 ridings in 2025, plus the Bloc outside Quebec)
@@ -90,6 +92,8 @@ Current tables:
 - `analytics.fed_summaries`: mean and widened 90% interval per question × 2023 riding × category, as read by the website; ordinal questions also get grouped answers and their mean position on the scale (`mean`)
 - `analytics.national_summaries`: national share per question × category, from every census cell weighted by its adult population
 - `analytics.province_summaries`: the same per province, which the map compares ridings with when a province is chosen
+- `analytics.fed_dimension_draws`, `analytics.fed_dimensions`: score of each 2023 riding on each dimension per draw (its mean answers, standardized like the respondents' and weighted by the score weights), then its mean and widened 90% interval; the left-right axis correlates at 0.83 with the estimated CPC vote across ridings
+- `analytics.national_dimensions`, `analytics.province_dimensions`: the same projection for Canada and each province, which the map compares ridings with
 - `analytics.vote_gaps`, `analytics.interval_scale`: estimates of both vote questions against the 2025 results (mean absolute gap 3.88 points for `vote_post`, 5.08 for `vote_pre`), and the interval widening factor calibrated on `vote_post`
 
 ## Known limitations
