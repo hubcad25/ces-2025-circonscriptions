@@ -4,6 +4,7 @@ import FilterControls, { type Filter, matches } from "./filters";
 import { type Text, useLang } from "./i18n";
 import { PARTIES } from "./parties";
 import RidingTable, { type Riding } from "./RidingTable";
+import SurveyMeansTable from "./SurveyMeansTable";
 
 const WAVES: { code: string; label: Text }[] = [
   { code: "vote_post", label: { en: "Reported vote", fr: "Vote déclaré" } },
@@ -78,6 +79,7 @@ export default function ValidationPage() {
           </p>
         </>
       )}
+      <SurveyMeansTable />
     </div>
   );
 }

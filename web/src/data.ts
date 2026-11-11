@@ -18,6 +18,14 @@ type RidingFile = {
   similar: Record<string, Neighbours>;
 };
 export type Neighbours = { similar: number[]; different: number[] };
+// The model's national estimate next to the survey's raw and weighted means (survey_means.sql).
+export type SurveyMean = {
+  question: string;
+  category: string;
+  model_mean: number;
+  raw_mean: number;
+  weighted_mean: number;
+};
 // [fed23, mean, low, high, result] by question and party.
 type ValidationFile = Record<string, Record<string, [number, number, number, number, number][]>>;
 
@@ -108,3 +116,5 @@ export async function loadValidation(question: string, party: string): Promise<V
     is_covered: low <= actual && actual <= high,
   }));
 }
+
+export const loadSurveyMeans = () => fetchJson<SurveyMean[]>("survey_means.json");
