@@ -34,6 +34,19 @@ function AboutEnglish() {
         are more stable, but closer to those of ridings with a similar profile.
       </p>
 
+      <h2>Dimensions</h2>
+      <p>
+        Many attitudes go together: someone who wants less immigration often wants a smaller
+        government too. A principal component analysis groups the {ATTITUDE_COUNT - 1} attitudes
+        asked across Canada into 5 dimensions, made easier to read with a varimax rotation. Each
+        riding's estimates are then projected onto them (see{" "}
+        <a href="#/dimensions">Dimensions</a>).
+      </p>
+      <p>
+        The left-right axis is the first component, before rotation. Across ridings, it correlates
+        at 0.83 with the Conservative vote.
+      </p>
+
       <h2>Accuracy</h2>
       <p>
         The vote is the only question with a real result to compare with. Against the official
@@ -105,6 +118,19 @@ function AboutFrench() {
         Une circonscription avec peu de répondants emprunte donc aux gens semblables ailleurs. Ses
         estimations sont plus stables, mais plus proches de celles des circonscriptions au profil
         semblable.
+      </p>
+
+      <h2>Dimensions</h2>
+      <p>
+        Beaucoup d'attitudes vont ensemble : qui veut moins d'immigration veut souvent aussi un
+        État plus petit. Une analyse en composantes principales regroupe les {ATTITUDE_COUNT - 1}{" "}
+        attitudes posées partout au Canada en 5 dimensions, rendues plus lisibles par une rotation
+        varimax. Les estimations de chaque circonscription y sont ensuite projetées (voir{" "}
+        <a href="#/dimensions">Dimensions</a>).
+      </p>
+      <p>
+        L'axe gauche-droite est la première composante, avant rotation. D'une circonscription à
+        l'autre, sa corrélation avec le vote conservateur est de 0,83.
       </p>
 
       <h2>Précision</h2>
